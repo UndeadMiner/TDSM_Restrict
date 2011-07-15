@@ -83,3 +83,8 @@ To grant or deny a request, reference it by its number.
 > `rr -d #`
 
 For the time being, requests are not persisted and vanish between restarts.
+
+The End
+-------
+
+Bitcoin donations are welcome under: 1Hb6Q13mRV2PL6nwu5XgaYDTK62BJC4MyU
