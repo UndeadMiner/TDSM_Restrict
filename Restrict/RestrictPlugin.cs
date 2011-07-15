@@ -63,7 +63,7 @@ namespace RestrictPlugin
 			Description = "Restrict access to the server or character names.";
 			Author = "UndeadMiner";
 			Version = "1";
-			TDSMBuild = 24; //Current Release - Working
+			TDSMBuild = 25;
 			
 			records = new Dictionary <string, PlayerRecord> ();
 			requests = new List<RegistrationRequest> ();
