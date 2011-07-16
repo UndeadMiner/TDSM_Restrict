@@ -70,7 +70,6 @@ namespace RestrictPlugin
 				
 				var name = args[0];
 				var player = FindPlayer (name);
-				PlayerRecord record = null;
 				
 				if (player == null)
 				{
@@ -81,11 +80,7 @@ namespace RestrictPlugin
 					}
 				}
 				else
-				{
 					name = player.Name;
-					if (! records.TryGetValue (name, out record))
-						record = null;
-				}
 				
 				var pname = NameTransform (name);
 				
@@ -104,8 +99,7 @@ namespace RestrictPlugin
 					users.setValue (pname, val);
 					users.Save ();
 					
-					if (record != null)
-						record.guest = false;
+					player.AuthenticatedAs = name;
 
 					if (player != null)
 					{
@@ -213,9 +207,7 @@ restrict.ru (register user):
 				{
 					name = player.Name;
 					player.Op = false;
-					PlayerRecord record;
-					if (records.TryGetValue (name, out record))
-						record.guest = true;
+					player.AuthenticatedAs = name;
 					
 					if (player != ev.Sender)
 						player.sendMessage ("<Restrict> Your registration has been revoked.");
@@ -337,8 +329,9 @@ restrict.ro (options):
 				{
 					ev.Sender.sendMessage ("restrict.rr: Pending requests:");
 					int i = requestsBase;
-					foreach (var rq in requests)
+					foreach (var kv in requests)
 					{
+						var rq = kv.Value;
 						if (rq == null) continue;
 						
 						ev.Sender.sendMessage (string.Format ("{0,3} : {1} : {2}", i, rq.address, rq.name));
@@ -347,9 +340,7 @@ restrict.ro (options):
 					return;
 				}
 				
-				grant -= requestsBase; deny -= requestsBase;
-				
-				if (grant >= requests.Count || deny >= requests.Count || (grant < 0 && deny < 0))
+				if (grant < 0 && deny < 0)
 				{
 					ev.Sender.sendMessage ("restrict.rr: No such registration request");
 					return;
@@ -357,17 +348,15 @@ restrict.ro (options):
 				
 				if (deny >= 0)
 				{
-					var rq = requests[deny];
+					RegistrationRequest rq;
 					
-					if (rq == null)
+					if (! requests.TryGetValue (deny, out rq))
 					{
 						ev.Sender.sendMessage ("restrict.rr: No such registration request");
 						return;
 					}
 					
-					requests[deny] = null;
-					requestCount -= 1;
-					CompactRequests ();
+					requests.Remove (deny);
 					
 					Program.server.notifyOps ("<Restrict> Registration request denied for: " + rq.name);
 					
@@ -378,17 +367,15 @@ restrict.ro (options):
 				}
 				else if (grant >= 0)
 				{
-					var rq = requests[grant];
+					RegistrationRequest rq;
 					
-					if (rq == null)
+					if (! requests.TryGetValue (grant, out rq))
 					{
 						ev.Sender.sendMessage ("restrict.rr: No such registration request");
 						return;
 					}
 					
-					requests[grant] = null;
-					requestCount -= 1;
-					CompactRequests ();
+					requests.Remove (grant);
 					
 					var pname = NameTransform (rq.name);
 					var hash = Hash (rq.name, rq.password);
@@ -396,15 +383,21 @@ restrict.ro (options):
 					users.setValue (pname, hash);
 					users.Save ();
 					
-					PlayerRecord record;
-					if (records.TryGetValue (rq.name, out record))
-						record.guest = false;
-					
 					var player = FindPlayer (rq.name);
 					if (player != null)
+					{
+						player.AuthenticatedAs = rq.name;
 						player.sendMessage ("<Restrict> You are now registered.");
+					}
 					
 					Program.server.notifyOps ("<Restrict> Registration request granted for: " + rq.name);
+					
+					var duplicates = requests.Where (kv => kv.Value.name == rq.name);
+					foreach (var kv in duplicates)
+					{
+						// deny other requests for the same name
+						requests.Remove (kv.Key);
+					}
 				}
 				
 			}
@@ -436,8 +429,7 @@ restrict.rr (registration requests):
 				var player = (Player) ev.Sender;
 				var name = player.Name;
 				
-				PlayerRecord record;
-				if (records.TryGetValue (name, out record) && record.guest == false)
+				if (player.AuthenticatedAs != null)
 				{
 					var pname = NameTransform (name);
 					var split = users.getValue(pname).Split(':');
@@ -461,18 +453,18 @@ restrict.rr (registration requests):
 					
 				var address = Netplay.slots[player.whoAmi].remoteAddress.Split(':')[0];
 				
-				if (requests.Any (r => r != null && r.address == address && r.name == name))
+				if (requests.Any (r => r.Value != null && r.Value.address == address && r.Value.name == name))
 				{
 					ev.Sender.sendMessage ("<Restrict> Registration request pending.");
 					return;
 				}
 				
-				int num = requests.Count + requestsBase;
-				requestCount += 1;
-				requests.Add (new RegistrationRequest { name = name, address = address, password = password });
+				requests[requestCount] = new RegistrationRequest { name = name, address = address, password = password };
 				
 				ev.Sender.sendMessage ("<Restrict> Registration request submitted.");
-				Program.server.notifyOps ("<Restrict> New registration request " + num + " for: " + name);
+				Program.server.notifyOps ("<Restrict> New registration request " + requestCount + " for: " + name);
+				
+				requestCount += 1;
 			}
 			catch (OptionException)
 			{
