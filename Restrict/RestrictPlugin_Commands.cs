@@ -207,7 +207,7 @@ restrict.ru (register user):
 				{
 					name = player.Name;
 					player.Op = false;
-					player.AuthenticatedAs = name;
+					player.AuthenticatedAs = null;
 					
 					if (player != ev.Sender)
 						player.sendMessage ("<Restrict> Your registration has been revoked.");
