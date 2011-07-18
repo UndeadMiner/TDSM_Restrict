@@ -29,7 +29,6 @@ namespace RestrictPlugin
 		
 		bool isEnabled = false;
 		Dictionary<int, RegistrationRequest> requests;
-		int requestsBase = 0;
 		int requestCount = 0;
 		
 		bool allowGuests

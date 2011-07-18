@@ -328,14 +328,13 @@ restrict.ro (options):
 				if (grant == -1 && deny == -1)
 				{
 					ev.Sender.sendMessage ("restrict.rr: Pending requests:");
-					int i = requestsBase;
+					
 					foreach (var kv in requests)
 					{
 						var rq = kv.Value;
 						if (rq == null) continue;
 						
-						ev.Sender.sendMessage (string.Format ("{0,3} : {1} : {2}", i, rq.address, rq.name));
-						i += 1;
+						ev.Sender.sendMessage (string.Format ("{0,3} : {1} : {2}", kv.Key, rq.address, rq.name));
 					}
 					return;
 				}
