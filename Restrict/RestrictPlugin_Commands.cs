@@ -6,8 +6,10 @@ using System.Security.Cryptography;
 
 using Terraria_Server.Plugin;
 using Terraria_Server;
+using Terraria_Server.Commands;
 using Terraria_Server.Misc;
 using Terraria_Server.Events;
+using Terraria_Server.Logging;
 using System.IO;
 
 using NDesk.Options;
@@ -16,40 +18,7 @@ namespace RestrictPlugin
 {
 	public partial class RestrictPlugin
 	{
-		void SwitchCommand (MessageEvent ev, IList<string> split)
-		{
-			switch (split[0])
-			{
-				case "ru":
-				case "restrict.ru":
-					ev.Cancelled = true;
-					lock(this) RegisterCommand (ev, split.Skip(1));
-					break;
-					
-				case "ur":
-				case "restrict.ur":
-					ev.Cancelled = true;
-					lock(this) UnregisterCommand (ev, split.Skip(1));
-					break;
-					
-				case "ro":
-				case "restrict.ro":
-					ev.Cancelled = true;
-					lock(this) OptionsCommand (ev, split.Skip(1));
-					break;
-				
-				case "rr":
-				case "restrict.rr":
-					ev.Cancelled = true;
-					lock(this) RequestsCommand (ev, split.Skip(1));
-					break;
-				
-				default:
-					return;
-			}
-		}
-		
-		void RegisterCommand (MessageEvent ev, IEnumerable<string> rest)
+		void RegisterCommand (Server server, ISender sender, ArgumentList argz)
 		{
 			try
 			{
@@ -63,10 +32,10 @@ namespace RestrictPlugin
 					{ "p|password=", v => password = v },
 				};
 				
-				var args = options.Parse (rest);
+				var args = options.Parse (argz);
 				
 				if (args.Count == 0 || args.Count > 2)
-					throw new OptionException ();
+					throw new CommandError ("");
 				
 				var name = args[0];
 				var player = FindPlayer (name);
@@ -75,7 +44,7 @@ namespace RestrictPlugin
 				{
 					if (! force)
 					{
-						ev.Sender.sendMessage ("restrict.ru: Player not found online, use -f to assume name is correct.");
+						sender.sendMessage ("restrict.ru: Player not found online, use -f to assume name is correct.");
 						return;
 					}
 				}
@@ -83,6 +52,7 @@ namespace RestrictPlugin
 					name = player.Name;
 				
 				var pname = NameTransform (name);
+				var oname = OldNameTransform (name);
 				
 				string hash = null;
 				if (password != null)
@@ -92,18 +62,20 @@ namespace RestrictPlugin
 				
 				if (hash != null)
 				{
-					var old = users.getValue (pname);
+					var old = users.getValue (pname) ?? users.getValue (oname);
 					
 					var val = hash;
 					if (op) val += ":op";
+					
+					users.setValue (oname, null);
 					users.setValue (pname, val);
 					users.Save ();
 					
-					player.AuthenticatedAs = name;
-
 					if (player != null)
 					{
-						if (player != ev.Sender)
+						player.AuthenticatedAs = name;
+						
+						if (player != sender)
 						{
 							if (op)
 								player.sendMessage ("<Restrict> You have been registered as an operator.");
@@ -114,20 +86,26 @@ namespace RestrictPlugin
 					}
 					
 					if (old != null)
-						ev.Sender.sendMessage ("restrict.ru: Changed password for: " + name);
+						sender.sendMessage ("restrict.ru: Changed password for: " + name);
 					else if (op)
-						ev.Sender.sendMessage ("restrict.ru: Registered operator: " + name);
+					{
+						sender.sendMessage ("restrict.ru: Registered operator: " + name);
+						ProgramLog.Admin.Log ("<Restrict> Manually registered new operator: " + name);
+					}
 					else
-						ev.Sender.sendMessage ("restrict.ru: Registered user: " + name);
+					{
+						sender.sendMessage ("restrict.ru: Registered user: " + name);
+						ProgramLog.Admin.Log ("<Restrict> Manually registered new user: " + name);
+					}
 
 				}
 				else if (args.Count == 1)
 				{
-					var entry = users.getValue (pname);
+					var entry = users.getValue (pname) ?? users.getValue (oname);
 					
 					if (entry == null)
 					{
-						ev.Sender.sendMessage ("restrict.ru: No such user in database: " + name);
+						sender.sendMessage ("restrict.ru: No such user in database: " + name);
 						return;
 					}
 					
@@ -137,7 +115,7 @@ namespace RestrictPlugin
 					if (player != null)
 					{
 						player.Op = op;
-						if (player != ev.Sender)
+						if (player != sender)
 						{
 							if (op && !oldop)
 								player.sendMessage ("<Restrict> You have been registered as an operator.");
@@ -150,34 +128,31 @@ namespace RestrictPlugin
 					{
 						var val = split[0];
 						if (op) val += ":op";
+						
+						users.setValue (oname, null);
 						users.setValue (pname, val);
 						users.Save ();
 						
 						if (oldop && !op)
-							ev.Sender.sendMessage ("restrict.ru: De-opped: " + name);
+						{
+							sender.sendMessage ("restrict.ru: De-opped: " + name);
+							ProgramLog.Admin.Log ("<Restrict> De-opped: " + name);
+						}
 						else if (op && !oldop)
-							ev.Sender.sendMessage ("restrict.ru: Opped: " + name);
+						{
+							sender.sendMessage ("restrict.ru: Opped: " + name);
+							ProgramLog.Admin.Log ("<Restrict> Opped: " + name);
+						}
 					}
 				}
 			}
 			catch (OptionException)
 			{
-				ev.Sender.sendMessage (@"
-restrict.ru (register user):
-    Adding users or changing passwords:
-        ru [-o] [-f] <name> <hash>
-        ru [-o] [-f] <name> -p <password>
-    Changing op status:
-        ru -o [-f] <name>
-        ru    [-f] <name>
-    Options:
-        -o    make the player an operator
-        -f    force action even if player isn't online
-    Hashes should be a SHA-256 checksum of: name:" + serverId + ":password");
+				throw new CommandError ("");
 			}
 		}
 
-		void UnregisterCommand (MessageEvent ev, IEnumerable<string> rest)
+		void UnregisterCommand (Server server, ISender sender, ArgumentList argz)
 		{
 			try
 			{
@@ -187,10 +162,10 @@ restrict.ru (register user):
 					{ "f|force", v => force = true },
 				};
 				
-				var args = options.Parse (rest);
+				var args = options.Parse (argz);
 				
 				if (args.Count == 0 || args.Count > 1)
-					throw new OptionException ();
+					throw new CommandError ("");
 				
 				var name = args[0];
 				var player = FindPlayer (name);
@@ -199,7 +174,7 @@ restrict.ru (register user):
 				{
 					if (! force)
 					{
-						ev.Sender.sendMessage ("restrict.ur: Player not found online, use -f to assume name is correct.");
+						sender.sendMessage ("restrict.ur: Player not found online, use -f to assume name is correct.");
 						return;
 					}
 				}
@@ -209,29 +184,26 @@ restrict.ru (register user):
 					player.Op = false;
 					player.AuthenticatedAs = null;
 					
-					if (player != ev.Sender)
+					if (player != sender)
 						player.sendMessage ("<Restrict> Your registration has been revoked.");
 				}
 				
 				var pname = NameTransform (name);
+				var oname = OldNameTransform (name);
 				
 				users.setValue (pname, null);
+				users.setValue (oname, null);
 				users.Save ();
 				
-				ev.Sender.sendMessage ("restrict.ur: Unregistered user: " + name);
+				sender.sendMessage ("restrict.ur: Unregistered user: " + name);
 			}
 			catch (OptionException)
 			{
-				ev.Sender.sendMessage (@"
-restrict.ur (unregister user):
-    Deleting users:
-        ur [-f] <name>
-    Options:
-        -f    force action even if player isn't online");
+				throw new CommandError ("");
 			}
 		}
 		
-		void OptionsCommand (MessageEvent ev, IEnumerable<string> rest)
+		void OptionsCommand (Server server, ISender sender, ArgumentList argz)
 		{
 			try
 			{
@@ -259,14 +231,14 @@ restrict.ur (unregister user):
 					},
 				};
 
-				var args = options.Parse (rest);
+				var args = options.Parse (argz);
 				
 				if (args.Count > 0)
-					throw new OptionException ();
+					throw new CommandError ("");
 					
 				if (changed_si && users.Count > 0)
 				{
-					ev.Sender.sendMessage ("restrict.ro: Warning: Changing the server id will invalidate existing password hashes. Use -f to do so anyway.");
+					sender.sendMessage ("restrict.ro: Warning: Changing the server id will invalidate existing password hashes. Use -f to do so anyway.");
 					if (! force)
 						return;
 				}
@@ -282,193 +254,216 @@ restrict.ur (unregister user):
 				
 				if (reload)
 				{
-					ev.Sender.sendMessage ("restrict.ro: Reloaded users database, entries: " + users.Count);
+					sender.sendMessage ("restrict.ro: Reloaded users database, entries: " + users.Count);
 					users.Load ();
 				}
 				
-				ev.Sender.sendMessage ("restrict.ro: Options set: server-id=" + si
-					+ ", allow-guests=" + ag.ToString()
-					+ ", restrict-guests=" + rg.ToString()
-					+ ", restrict-guests-doors=" + rd.ToString());
+				var msg = string.Concat (
+					"Options set: server-id=", si,
+					", allow-guests=", ag.ToString(),
+					", restrict-guests=", rg.ToString(),
+					", restrict-guests-doors=" + rd.ToString());
+				
+				ProgramLog.Admin.Log ("<Restrict> " + msg);
+				sender.sendMessage ("restrict.ro: " + msg);
 			}
 			catch (OptionException)
 			{
-				ev.Sender.sendMessage (@"
-restrict.ro (options):
-    Displaying options:
-        ro
-    Setting options:
-        ro [-f] [-g {true|false}] [-r {true|false}] [-s <serverId>] [-L]
-    Options:
-        -f    force action
-        -g    allow guests to enter the game
-        -r    restrict guests' ability to alter tiles
-        -s    set the server identifier used in hashing passwords
-        -L    reload the user database from disk");
+				throw new CommandError ("");
 			}
 		}
 
-		void RequestsCommand (MessageEvent ev, IEnumerable<string> rest)
+		void RequestsCommand (Server server, ISender sender, ArgumentList args)
 		{
-			try
+			int num;
+			if (args.TryParseOne ("-g", out num) || args.TryParseOne ("grant", out num))
 			{
-				var grant = -1;
-				var deny = -1;
-				var options = new OptionSet ()
+				RegistrationRequest rq;
+				
+				if (! requests.TryGetValue (num, out rq))
 				{
-					{ "g|grant=", (int v) => grant = v },
-					{ "d|deny=", (int v) => deny = v },
-				};
-				
-				var args = options.Parse (rest);
-				
-				if (args.Count != 0 || (grant >= 0 && deny >= 0))
-					throw new OptionException ();
-				
-				if (grant == -1 && deny == -1)
-				{
-					ev.Sender.sendMessage ("restrict.rr: Pending requests:");
-					
-					foreach (var kv in requests)
-					{
-						var rq = kv.Value;
-						if (rq == null) continue;
-						
-						ev.Sender.sendMessage (string.Format ("{0,3} : {1} : {2}", kv.Key, rq.address, rq.name));
-					}
+					sender.sendMessage ("restrict.rr: No such registration request");
 					return;
 				}
 				
-				if (grant < 0 && deny < 0)
+				requests.Remove (num);
+				
+				var pname = NameTransform (rq.name);
+				var hash = Hash (rq.name, rq.password);
+				
+				users.setValue (pname, hash);
+				users.Save ();
+				
+				var player = FindPlayer (rq.name);
+				if (player != null)
 				{
-					ev.Sender.sendMessage ("restrict.rr: No such registration request");
-					return;
+					player.AuthenticatedAs = rq.name;
+					player.sendMessage ("<Restrict> You are now registered.");
 				}
 				
-				if (deny >= 0)
-				{
-					RegistrationRequest rq;
-					
-					if (! requests.TryGetValue (deny, out rq))
-					{
-						ev.Sender.sendMessage ("restrict.rr: No such registration request");
-						return;
-					}
-					
-					requests.Remove (deny);
-					
-					Program.server.notifyOps ("<Restrict> Registration request denied for: " + rq.name);
-					
-					var player = FindPlayer (rq.name);
-					if (player != null)
-						player.sendMessage ("<Restrict> Your registration request has been denied.");
-					
-				}
-				else if (grant >= 0)
-				{
-					RegistrationRequest rq;
-					
-					if (! requests.TryGetValue (grant, out rq))
-					{
-						ev.Sender.sendMessage ("restrict.rr: No such registration request");
-						return;
-					}
-					
-					requests.Remove (grant);
-					
-					var pname = NameTransform (rq.name);
-					var hash = Hash (rq.name, rq.password);
-					
-					users.setValue (pname, hash);
-					users.Save ();
-					
-					var player = FindPlayer (rq.name);
-					if (player != null)
-					{
-						player.AuthenticatedAs = rq.name;
-						player.sendMessage ("<Restrict> You are now registered.");
-					}
-					
-					Program.server.notifyOps ("<Restrict> Registration request granted for: " + rq.name);
-					
-					var duplicates = requests.Where (kv => kv.Value.name == rq.name);
-					foreach (var kv in duplicates)
-					{
-						// deny other requests for the same name
-						requests.Remove (kv.Key);
-					}
-				}
+				Program.server.notifyOps ("<Restrict> Registration request granted for: " + rq.name, true);
 				
+				var duplicates = requests.Where (kv => kv.Value.name == rq.name);
+				foreach (var kv in duplicates)
+				{
+					// deny other requests for the same name
+					requests.Remove (kv.Key);
+				}
 			}
-			catch (OptionException)
+			else if (args.TryParseOne ("-d", out num) || args.TryParseOne ("deny", out num))
 			{
-				ev.Sender.sendMessage (@"
-restrict.rr (registration requests):
-    Listing:
-        rr
-    Granting:
-        rr -g <number>
-    Denying:
-        rr -d <number>");
+				RegistrationRequest rq;
+				
+				if (! requests.TryGetValue (num, out rq))
+				{
+					sender.sendMessage ("restrict.rr: No such registration request");
+					return;
+				}
+				
+				requests.Remove (num);
+				
+				Program.server.notifyOps ("<Restrict> Registration request denied for: " + rq.name, true);
+				
+				var player = FindPlayer (rq.name);
+				if (player != null)
+					player.sendMessage ("<Restrict> Your registration request has been denied.");
+			}
+			else
+			{
+				args.ParseNone ();
+				
+				sender.sendMessage ("restrict.rr: Pending requests:");
+				
+				foreach (var kv in requests)
+				{
+					var rq = kv.Value;
+					if (rq == null) continue;
+					
+					sender.sendMessage (string.Format ("{0,3} : {1} : {2}", kv.Key, rq.address, rq.name));
+				}
 			}
 		}
-
-		void RequestPlayerCommand (MessageEvent ev, string password)
+		
+		static HashSet<string> obviousPasswords = new HashSet<string> ()
 		{
-			try
+			"password", "yourpass", "yourpassword", "12345", "123456", "01234", "012345",
+			"hello", "mypass", "mypassword", "obama",
+		};
+
+		void PlayerPassCommand (Server server, ISender sender, string password)
+		{
+			PlayerCommand ("pass", server, sender, password);
+		}
+
+		void PlayerRegCommand (Server server, ISender sender, string password)
+		{
+			PlayerCommand ("reg", server, sender, password);
+		}
+
+		void PlayerCommand (string command, Server server, ISender sender, string password)
+		{
+			if (! (sender is Player)) return;
+			
+			var player = (Player) sender;
+			
+			if (player.AuthenticatedAs != null && command == "reg")
 			{
-				if (password == null)
-					throw new OptionException ();
+				sender.sendMessage ("<Restrict> Already registered, use /pass to change your password.", 255, 255, 180, 180);
+				return;
+			}
+			else if (player.AuthenticatedAs == null && command == "pass")
+			{
+				sender.sendMessage ("<Restrict> You are a guest, use /reg to submit a registration request.", 255, 255, 180, 180);
+				return;
+			}
+			
+			if (password == null)
+			{
+				sender.sendMessage ("Error: password cannot be empty.", 255, 255, 180, 180);
+				return;
+			}
+			
+			password = password.Trim();
+			
+			if (password == "")
+			{
+				sender.sendMessage ("Error: password cannot be empty.", 255, 255, 150, 150);
+				return;
+			}
+			
+			if (password.Length < 5)
+			{
+				sender.sendMessage ("Error: passwords must have at least 5 characters.", 255, 255, 150, 150);
+				return;
+			}
+			
+			var name = player.Name;
+			var lp = password.ToLower();
+			
+			if (lp == name.ToLower())
+			{
+				sender.sendMessage ("Error: passwords cannot be the same as your name.", 255, 255, 150, 150);
+				return;
+			}
+			
+			if (obviousPasswords.Contains (lp))
+			{
+				sender.sendMessage ("Error: password not accepted, too obvious: " + lp, 255, 255, 150, 150);
+				return;
+			}
+			
+			if (player.AuthenticatedAs != null)
+			{
+				var pname = NameTransform (name);
+				var oname = OldNameTransform (name);
+				var split = (users.getValue(pname) ?? users.getValue(oname)).Split(':');
+				var hash = Hash (name, password);
 				
-				password = password.Trim();
-				
-				if (password == "")
-					throw new OptionException ();
-				
-				var player = (Player) ev.Sender;
-				var name = player.Name;
-				
-				if (player.AuthenticatedAs != null)
+				if (hash == split[0])
 				{
-					var pname = NameTransform (name);
-					var split = users.getValue(pname).Split(':');
-					var hash = Hash (name, password);
-					
-					if (hash == split[0])
-					{
-						ev.Sender.sendMessage ("<Restrict> Already registered.");
-						return;
-					}
-					
-					if (split.Length > 1 && split[1] == "op")
-						hash = hash + ":op";
-					
-					users.setValue (pname, hash);
-					users.Save ();
-					
-					ev.Sender.sendMessage ("<Restrict> Already registered, password changed.");
+					sender.sendMessage ("<Restrict> Already registered.");
 					return;
 				}
-					
-				var address = Netplay.slots[player.whoAmi].remoteAddress.Split(':')[0];
 				
-				if (requests.Any (r => r.Value != null && r.Value.address == address && r.Value.name == name))
-				{
-					ev.Sender.sendMessage ("<Restrict> Registration request pending.");
-					return;
-				}
+				if (split.Length > 1 && split[1] == "op")
+					hash = hash + ":op";
 				
-				requests[requestCount] = new RegistrationRequest { name = name, address = address, password = password };
+				users.setValue (oname, null);
+				users.setValue (pname, hash);
+				users.Save ();
 				
-				ev.Sender.sendMessage ("<Restrict> Registration request submitted.");
-				Program.server.notifyOps ("<Restrict> New registration request " + requestCount + " for: " + name);
-				
-				requestCount += 1;
+				sender.sendMessage ("<Restrict> Your new password is: " + password);
+				return;
 			}
-			catch (OptionException)
+				
+			var address = Netplay.slots[player.whoAmi].remoteAddress.Split(':')[0];
+			
+			var previous = requests.Values.Where (r => r != null && r.address == address && r.name == name);
+			var cp = previous.Count ();
+			if (cp > 0)
 			{
-				ev.Sender.sendMessage ("<Restrict> Command usage: /rr password");
+				if (cp > 1)
+					ProgramLog.Error.Log ("<Restrict> Non-fatal error: more than one identical registration request.");
+				
+				var rq = previous.First();
+				if (password != rq.password)
+				{
+					rq.password = password;
+					sender.sendMessage ("<Restrict> Changed password on pending request to: " + password);
+				}
+				else
+					sender.sendMessage ("<Restrict> Request pending, your password: " + password);
+				return;
 			}
+			
+			requests[requestCount] = new RegistrationRequest { name = name, address = address, password = password };
+			
+			sender.sendMessage ("<Restrict> Request submitted, your password: " + password);
+			var msg = string.Concat ("<Restrict> New registration request ", requestCount, " for: ", name);
+			Program.server.notifyOps (msg, false);
+			ProgramLog.Users.Log (msg);
+			
+			requestCount += 1;
 		}
 	}
 }

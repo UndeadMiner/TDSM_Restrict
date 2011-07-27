@@ -47,6 +47,11 @@ namespace RestrictPlugin
 
 		static string NameTransform (string name)
 		{
+			return name.ToLower().Replace ("=", "_EQUAL_");
+		}
+		
+		static string OldNameTransform (string name)
+		{
 			return string.Concat ("<", name.Replace ("=", "_EQUAL_"), ">");
 		}
 	}

@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Restrict", "Restrict\Restrict.csproj", "{0FEC21CD-5ABA-4A5D-A4F3-EB65F07DF68C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{90A9D6C0-18CB-4897-804D-A0EC52D8BFFD}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,9 +19,11 @@ Global
 		{0FEC21CD-5ABA-4A5D-A4F3-EB65F07DF68C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0FEC21CD-5ABA-4A5D-A4F3-EB65F07DF68C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		StartupItem = Restrict\Restrict.csproj
-		version = 0.26.2
+		version = 0.29.0
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

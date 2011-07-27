@@ -10,9 +10,22 @@ Features
  + Password authentication of registered users upon connection using
    the server password prompt. (But passwords don't need to be unique.)
  + Automatic opping for registered operator users.
- + Restricting guests' ability to destroy/place tiles or use explosives
+ + Restricting guests' ability to edit tiles or use explosives
  + Restricting guests' ability to close/open doors
  + Fully configurable without restarting the server
+
+Command syntax
+
+All console/op commands use the same tokenizer, which splits arguments
+on space-boundaries. To include multiple words as a single argument,
+surround them with double quotes like this:
+> `"foo bar"`
+or escape the space with a slash:
+> `foo\ bar`
+Literal quotes and slashes need to be escaped:
+> `\"` for a quote
+> `\\` for a slash
+The player /reg and /pass commands don't use this and need no escaping.
 
 Configuration
 -------------
@@ -70,16 +83,19 @@ These commands with add or remove the operator status on an existing user.
 
 Guests have a chat command available, that allows them to submit a request
 for registration.  
-> `/rr password`
+> `/reg password`
+
+Registered users may change their passwords with:
+> `/pass password`
 
 Online ops are notified of new requests. Pending requests can be listed
 with:  
 > `rr`
 
 To grant or deny a request, reference it by its number.  
-> `rr --grant #`  
+> `rr grant #`  
 > `rr -g #`  
-> `rr --deny #`  
+> `rr deny #`  
 > `rr -d #`
 
 For the time being, requests are not persisted and vanish between restarts.
