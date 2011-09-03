@@ -295,7 +295,7 @@ namespace RestrictPlugin
 				users.Save ();
 				
 				var player = FindPlayer (rq.name);
-				if (player != null)
+				if (player != null) // TODO: verify IP address
 				{
 					player.AuthenticatedAs = rq.name;
 					player.sendMessage ("<Restrict> You are now registered.");
@@ -303,7 +303,7 @@ namespace RestrictPlugin
 				
 				Program.server.notifyOps ("<Restrict> Registration request granted for: " + rq.name, true);
 				
-				var duplicates = requests.Where (kv => kv.Value.name == rq.name);
+				var duplicates = requests.Where (kv => kv.Value.name == rq.name).ToArray();
 				foreach (var kv in duplicates)
 				{
 					// deny other requests for the same name

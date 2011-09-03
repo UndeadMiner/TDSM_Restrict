@@ -57,8 +57,8 @@ namespace RestrictPlugin
 			Name = "Restrict";
 			Description = "Restrict access to the server or character names.";
 			Author = "UndeadMiner";
-			Version = "0.29.0";
-			TDSMBuild = 29;
+			Version = "0.32.0";
+			TDSMBuild = 32;
 			
 			requests = new Dictionary <int, RegistrationRequest> ();
 			
@@ -166,7 +166,7 @@ namespace RestrictPlugin
 			
 			if (ev.Player.Name == null)
 			{
-				ev.Slot.Kick ("Null player name");
+				ev.Player.Kick ("Null player name");
 				return;
 			}
 			
@@ -181,18 +181,19 @@ namespace RestrictPlugin
 				{
 					ev.Action = PlayerLoginAction.ACCEPT;
 					ev.Player.AuthenticatedAs = null;
+					ev.Priority = LoginPriority.QUEUE_LOW_PRIO;
 					
-					Program.tConsole.WriteLine ("<Restrict> Letting user {0} in slot {1} in as guest.", name, ev.Slot.whoAmI);
+					Program.tConsole.WriteLine ("<Restrict> Letting user {0} from {1} in as guest.", name, ev.Player.IPAddress);
 				}
 				else
 				{
-					Program.tConsole.WriteLine ("<Restrict> Unregistered user {0} in slot {1} connection attempt.", name, ev.Slot.whoAmI);
-					ev.Slot.Kick ("Only registered users are allowed.");
+					Program.tConsole.WriteLine ("<Restrict> Unregistered user {0} from {1} attempted to connect.", name, ev.Player.IPAddress);
+					ev.Player.Kick ("Only registered users are allowed.");
 				}
 				return;
 			}
 			
-			Program.tConsole.WriteLine ("<Restrict> Expecting password for user {0} in slot {1}.", name, ev.Slot.whoAmI);
+			Program.tConsole.WriteLine ("<Restrict> Expecting password for user {0} from {1}.", name, ev.Player.IPAddress);
 			ev.Action = PlayerLoginAction.ASK_PASS;
 		}
 
@@ -202,7 +203,7 @@ namespace RestrictPlugin
 			
 			if (ev.Player.Name == null)
 			{
-				ev.Slot.Kick ("Null player name");
+				ev.Player.Kick ("Null player name");
 				return;
 			}
 			
@@ -217,9 +218,10 @@ namespace RestrictPlugin
 				{
 					ev.Action = PlayerLoginAction.ACCEPT;
 					ev.Player.AuthenticatedAs = null;
+					ev.Priority = LoginPriority.QUEUE_LOW_PRIO;
 				}
 				else
-					ev.Slot.Kick ("Only registered users are allowed.");
+					ev.Player.Kick ("Only registered users are allowed.");
 				return;
 			}
 			
@@ -229,12 +231,19 @@ namespace RestrictPlugin
 			
 			if (hash != hash2)
 			{
-				ev.Slot.Kick ("Incorrect password for user: " + name);
+				ev.Player.Kick ("Incorrect password for user: " + name);
 				return;
 			}
 			
 			if (split.Length > 1 && split[1] == "op")
+			{
 				ev.Player.Op = true;
+				ev.Priority = LoginPriority.BYPASS_QUEUE;
+			}
+			else
+			{
+				ev.Priority = LoginPriority.QUEUE_MEDIUM_PRIO;
+			}
 			
 			ev.Action = PlayerLoginAction.ACCEPT;
 			ev.Player.AuthenticatedAs = name;
