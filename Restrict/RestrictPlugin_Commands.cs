@@ -4,11 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 
-using Terraria_Server.Plugin;
 using Terraria_Server;
 using Terraria_Server.Commands;
 using Terraria_Server.Misc;
-using Terraria_Server.Events;
 using Terraria_Server.Logging;
 using System.IO;
 
@@ -18,7 +16,7 @@ namespace RestrictPlugin
 {
 	public partial class RestrictPlugin
 	{
-		void RegisterCommand (Server server, ISender sender, ArgumentList argz)
+		void RegisterCommand (ISender sender, ArgumentList argz)
 		{
 			try
 			{
@@ -152,7 +150,7 @@ namespace RestrictPlugin
 			}
 		}
 
-		void UnregisterCommand (Server server, ISender sender, ArgumentList argz)
+		void UnregisterCommand (ISender sender, ArgumentList argz)
 		{
 			try
 			{
@@ -203,7 +201,7 @@ namespace RestrictPlugin
 			}
 		}
 		
-		void OptionsCommand (Server server, ISender sender, ArgumentList argz)
+		void OptionsCommand (ISender sender, ArgumentList argz)
 		{
 			try
 			{
@@ -273,7 +271,7 @@ namespace RestrictPlugin
 			}
 		}
 
-		void RequestsCommand (Server server, ISender sender, ArgumentList args)
+		void RequestsCommand (ISender sender, ArgumentList args)
 		{
 			int num;
 			if (args.TryParseOne ("-g", out num) || args.TryParseOne ("grant", out num))
@@ -301,7 +299,7 @@ namespace RestrictPlugin
 					player.sendMessage ("<Restrict> You are now registered.");
 				}
 				
-				Program.server.notifyOps ("<Restrict> Registration request granted for: " + rq.name, true);
+				Server.notifyOps ("<Restrict> Registration request granted for: " + rq.name, true);
 				
 				var duplicates = requests.Where (kv => kv.Value.name == rq.name).ToArray();
 				foreach (var kv in duplicates)
@@ -322,7 +320,7 @@ namespace RestrictPlugin
 				
 				requests.Remove (num);
 				
-				Program.server.notifyOps ("<Restrict> Registration request denied for: " + rq.name, true);
+				Server.notifyOps ("<Restrict> Registration request denied for: " + rq.name, true);
 				
 				var player = FindPlayer (rq.name);
 				if (player != null)
@@ -350,17 +348,17 @@ namespace RestrictPlugin
 			"hello", "mypass", "mypassword", "obama",
 		};
 
-		void PlayerPassCommand (Server server, ISender sender, string password)
+		void PlayerPassCommand (ISender sender, string password)
 		{
-			PlayerCommand ("pass", server, sender, password);
+			PlayerCommand ("pass", sender, password);
 		}
 
-		void PlayerRegCommand (Server server, ISender sender, string password)
+		void PlayerRegCommand (ISender sender, string password)
 		{
-			PlayerCommand ("reg", server, sender, password);
+			PlayerCommand ("reg", sender, password);
 		}
 
-		void PlayerCommand (string command, Server server, ISender sender, string password)
+		void PlayerCommand (string command, ISender sender, string password)
 		{
 			if (! (sender is Player)) return;
 			
@@ -436,7 +434,7 @@ namespace RestrictPlugin
 				return;
 			}
 				
-			var address = Netplay.slots[player.whoAmi].remoteAddress.Split(':')[0];
+			var address = NetPlay.slots[player.whoAmi].remoteAddress.Split(':')[0];
 			
 			var previous = requests.Values.Where (r => r != null && r.address == address && r.name == name);
 			var cp = previous.Count ();
@@ -460,7 +458,7 @@ namespace RestrictPlugin
 			
 			sender.sendMessage ("<Restrict> Request submitted, your password: " + password);
 			var msg = string.Concat ("<Restrict> New registration request ", requestCount, " for: ", name);
-			Program.server.notifyOps (msg, false);
+			Server.notifyOps (msg, false);
 			ProgramLog.Users.Log (msg);
 			
 			requestCount += 1;

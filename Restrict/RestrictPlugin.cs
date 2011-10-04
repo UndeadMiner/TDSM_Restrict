@@ -4,19 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 
-using Terraria_Server.Plugin;
+using Terraria_Server.Plugins;
 using Terraria_Server;
 using Terraria_Server.Commands;
 using Terraria_Server.Definitions;
 using Terraria_Server.Misc;
-using Terraria_Server.Events;
+using Terraria_Server.Logging;
 using System.IO;
 
 using NDesk.Options;
 
 namespace RestrictPlugin
 {
-    public partial class RestrictPlugin : Plugin
+    public partial class RestrictPlugin : BasePlugin
     {
 		class RegistrationRequest
 		{
@@ -28,7 +28,6 @@ namespace RestrictPlugin
 		PropertiesFile properties;
 		PropertiesFile users;
 		
-		bool isEnabled = false;
 		Dictionary<int, RegistrationRequest> requests;
 		int requestCount = 0;
 		
@@ -51,15 +50,18 @@ namespace RestrictPlugin
 		{
 			get { return properties.getValue ("server-id", "tdsm"); }
 		}
-		       
-		public override void Load()
+		
+		public RestrictPlugin ()
 		{
 			Name = "Restrict";
 			Description = "Restrict access to the server or character names.";
 			Author = "UndeadMiner";
-			Version = "0.32.0";
-			TDSMBuild = 32;
-			
+			Version = "0.36.0";
+			TDSMBuild = 36;
+		}
+		       
+		protected override void Initialized (object state)
+		{
 			requests = new Dictionary <int, RegistrationRequest> ();
 			
 			string pluginFolder = Statics.PluginPath + Path.DirectorySeparatorChar + "Restrict";
@@ -78,8 +80,6 @@ namespace RestrictPlugin
 			users.Load();
 			users.Save();
 			
-			isEnabled = true;
-			
 			AddCommand ("ru")
 				.WithDescription ("Register users or change their accounts")
 				.WithHelpText ("Adding users or changing passwords:")
@@ -91,7 +91,7 @@ namespace RestrictPlugin
 				.WithHelpText ("Options:")
 				.WithHelpText ("    -o    make the player an operator")
 				.WithHelpText ("    -f    force action even if player isn't online")
-				.Calls (this.RegisterCommand);
+				.Calls (LockUsers<ISender, ArgumentList>(this.RegisterCommand));
 
 			
 			AddCommand ("ur")
@@ -100,7 +100,7 @@ namespace RestrictPlugin
 				.WithHelpText ("    ur [-f] <name>")
 				.WithHelpText ("Options:")
 				.WithHelpText ("    -f    force action even if player isn't online")
-				.Calls (this.UnregisterCommand);
+				.Calls (LockUsers<ISender, ArgumentList>(this.UnregisterCommand));
 			
 			AddCommand ("ro")
 				.WithDescription ("Configure Restrict")
@@ -114,7 +114,7 @@ namespace RestrictPlugin
 				.WithHelpText ("    -r    restrict guests' ability to alter tiles")
 				.WithHelpText ("    -s    set the server identifier used in hashing passwords")
 				.WithHelpText ("    -L    reload the user database from disk")
-				.Calls (this.OptionsCommand);
+				.Calls (LockUsers<ISender, ArgumentList>(this.OptionsCommand));
 			
 			AddCommand ("rr")
 				.WithDescription ("Manage registration requests")
@@ -123,144 +123,177 @@ namespace RestrictPlugin
 				.WithHelpText ("       rr grant #")
 				.WithHelpText ("       rr -d #     deny a registration request")
 				.WithHelpText ("       rr deny #")
-				.Calls (this.RequestsCommand);
+				.Calls (LockUsers<ISender, ArgumentList>(this.RequestsCommand));
 			
 			AddCommand ("pass")
 				.WithDescription ("Change your password")
 				.WithAccessLevel (AccessLevel.PLAYER)
 				.WithHelpText ("Usage: /pass yourpassword")
-				.Calls (this.PlayerPassCommand);
+				.Calls (LockUsers<ISender, string>(this.PlayerPassCommand));
 				
 			AddCommand ("reg")
 				.WithDescription ("Submit a registration request")
 				.WithAccessLevel (AccessLevel.PLAYER)
 				.WithHelpText ("Usage: /reg yourpassword")
-				.Calls (this.PlayerRegCommand);
+				.Calls (LockUsers<ISender, string>(this.PlayerRegCommand));
 		}
 		
-		public override void Enable()
+		Action<T, U> LockUsers<T, U> (Action<T, U> callback)
 		{
-			Program.tConsole.WriteLine(base.Name + " enabled.");
-
-			this.registerHook(Hooks.PLAYER_AUTH_QUERY);
-			this.registerHook(Hooks.PLAYER_AUTH_REPLY);
-			this.registerHook(Hooks.PLAYER_TILECHANGE);
-			this.registerHook(Hooks.PLAYER_EDITSIGN);
-			this.registerHook(Hooks.PLAYER_CHESTBREAK);
-			this.registerHook(Hooks.PLAYER_FLOWLIQUID);
-			this.registerHook(Hooks.DOOR_STATECHANGE);
-			this.registerHook(Hooks.PLAYER_PROJECTILE);
-			this.registerHook(Hooks.PLAYER_CHEST);
-			this.registerHook(Hooks.PLAYER_LOGIN);
-			this.registerHook(Hooks.PLAYER_LOGOUT);
-		}
-		
-		public override void Disable()
-		{
-			Program.tConsole.WriteLine(base.Name + " disabled.");
-		}
-		
-		public override void onPlayerAuthQuery (PlayerLoginEvent ev)
-		{
-			ev.Action = PlayerLoginAction.REJECT;
-			
-			if (ev.Player.Name == null)
+			return delegate (T t, U u)
 			{
-				ev.Player.Kick ("Null player name");
+				lock (users)
+				{
+					callback (t, u);
+				}
+			};
+		}
+		
+		protected override void Disposed (object state)
+		{
+		
+		}
+		
+		protected override void Enabled ()
+		{
+			ProgramLog.Log(base.Name + " enabled.");
+		}
+		
+		protected override void Disabled ()
+		{
+			ProgramLog.Log(base.Name + " disabled.");
+		}
+		
+		[Hook(HookOrder.EARLY)]
+		void OnPlayerDataReceived (ref HookContext ctx, ref HookArgs.PlayerDataReceived args)
+		{
+			ctx.SetKick ("Malfunction during login process, try again.");
+			
+			if (! args.NameChecked)
+			{
+				string error;
+				if (! args.CheckName (out error))
+				{
+					ctx.SetKick (error);
+					return;
+				}
+			}
+			
+			var player = ctx.Player;
+			if (player == null)
+			{
+				ProgramLog.Error.Log ("Null player passed to Restrict.OnPlayerDataReceived.");
 				return;
 			}
 			
-			var name = ev.Player.Name;
+			var name = args.Name;
 			var pname = NameTransform (name);
 			var oname = OldNameTransform (name);
-			var entry = users.getValue (pname) ?? users.getValue (oname);
+			string entry = null;
+			
+			lock (users)
+			{
+				entry = users.getValue (pname) ?? users.getValue (oname);
+			}
 			
 			if (entry == null)
 			{
 				if (allowGuests)
 				{
-					ev.Action = PlayerLoginAction.ACCEPT;
-					ev.Player.AuthenticatedAs = null;
-					ev.Priority = LoginPriority.QUEUE_LOW_PRIO;
+					ctx.SetResult (HookResult.DEFAULT);
+					player.AuthenticatedAs = null;
+					ctx.Connection.DesiredQueue = 0; //(int)LoginPriority.QUEUE_LOW_PRIO;
 					
-					Program.tConsole.WriteLine ("<Restrict> Letting user {0} from {1} in as guest.", name, ev.Player.IPAddress);
+					ProgramLog.Log ("<Restrict> Letting user {0} from {1} in as guest.", name, player.IPAddress);
 				}
 				else
 				{
-					Program.tConsole.WriteLine ("<Restrict> Unregistered user {0} from {1} attempted to connect.", name, ev.Player.IPAddress);
-					ev.Player.Kick ("Only registered users are allowed.");
+					ProgramLog.Log ("<Restrict> Unregistered user {0} from {1} attempted to connect.", name, player.IPAddress);
+					ctx.SetKick ("Only registered users are allowed.");
+					return;
 				}
 				return;
 			}
 			
-			Program.tConsole.WriteLine ("<Restrict> Expecting password for user {0} from {1}.", name, ev.Player.IPAddress);
-			ev.Action = PlayerLoginAction.ASK_PASS;
+			ProgramLog.Log ("<Restrict> Expecting password for user {0} from {1}.", name, player.IPAddress);
+			ctx.SetResult (HookResult.ASK_PASS);
 		}
-
-		public override void onPlayerAuthReply (PlayerLoginEvent ev)
+		
+		[Hook(HookOrder.EARLY)]
+		void OnPlayerPassReceived (ref HookContext ctx, ref HookArgs.PlayerPassReceived args)
 		{
-			ev.Action = PlayerLoginAction.REJECT;
+			ctx.SetKick ("Malfunction during login process, try again.");
 			
-			if (ev.Player.Name == null)
+			var player = ctx.Player;
+			if (player == null)
 			{
-				ev.Player.Kick ("Null player name");
+				ProgramLog.Error.Log ("Null player passed to Restrict.OnPlayerPassReceived.");
 				return;
 			}
-			
-			var name = ev.Player.Name;
+
+			var name = player.Name;
 			var pname = NameTransform (name);
 			var oname = OldNameTransform (name);
-			var entry = users.getValue (pname) ?? users.getValue (oname);
+			string entry = null;
+			
+			lock (users)
+			{
+				entry = users.getValue (pname) ?? users.getValue (oname);
+			}
 			
 			if (entry == null)
 			{
 				if (allowGuests)
 				{
-					ev.Action = PlayerLoginAction.ACCEPT;
-					ev.Player.AuthenticatedAs = null;
-					ev.Priority = LoginPriority.QUEUE_LOW_PRIO;
+					ctx.SetResult (HookResult.DEFAULT);
+					player.AuthenticatedAs = null;
+					ctx.Connection.DesiredQueue = 0;
 				}
 				else
-					ev.Player.Kick ("Only registered users are allowed.");
+					ctx.SetKick ("Only registered users are allowed.");
+
 				return;
 			}
 			
 			var split = entry.Split (':');
 			var hash  = split[0];
-			var hash2 = Hash (name, ev.Password);
+			var hash2 = Hash (name, args.Password);
 			
 			if (hash != hash2)
 			{
-				ev.Player.Kick ("Incorrect password for user: " + name);
+				ctx.SetKick ("Incorrect password for user: " + name);
 				return;
 			}
 			
 			if (split.Length > 1 && split[1] == "op")
 			{
-				ev.Player.Op = true;
-				ev.Priority = LoginPriority.BYPASS_QUEUE;
+				player.Op = true;
+				ctx.Connection.DesiredQueue = 3;
 			}
 			else
 			{
-				ev.Priority = LoginPriority.QUEUE_MEDIUM_PRIO;
+				ctx.Connection.DesiredQueue = 1;
 			}
 			
-			ev.Action = PlayerLoginAction.ACCEPT;
-			ev.Player.AuthenticatedAs = name;
+			player.AuthenticatedAs = name;
+			ctx.SetResult (HookResult.DEFAULT);
 		}
-
-		public override void onPlayerJoin (PlayerLoginEvent ev)
+		
+		[Hook(HookOrder.TERMINAL)]
+		void OnJoin (ref HookContext ctx, ref HookArgs.PlayerEnteredGame args)
 		{
-			var player = ev.Player;
+			var player = ctx.Player;
 			
 			if (player.Name == null) return;
 
 			if (player.AuthenticatedAs == null)
-				ev.Player.sendMessage ("You are a guest, to register type: /reg yourpassword");
-			else if (ev.Player.Op)
-				ev.Player.sendMessage ("This humble server welcomes back Their Operating Highness.", 255, 128, 128, 255);
+				player.Message (255, "You are a guest, to register type: /reg yourpassword");
+			else if (player.Op)
+				player.Message (255, new Color (128, 128, 255), "This humble server welcomes back Their Operating Highness.");
 			else
-				ev.Player.sendMessage ("Welcome back, registered user.", 255, 128, 255, 128);
+				player.Message (255, new Color (128, 255, 128), "Welcome back, registered user.");
+			
+			return;
 		}
 		
 //		public override void onPlayerLogout (PlayerLogoutEvent ev)
@@ -274,14 +307,15 @@ namespace RestrictPlugin
 //			}
 //		}
 
-		public override void onPlayerEditSign (PlayerEditSignEvent ev)
+		[Hook(HookOrder.EARLY)]
+		void OnSignTextSet (ref HookContext ctx, ref HookArgs.SignTextSet args)
 		{
-			var player = ev.Sender as Player;
+			var player = ctx.Player;
 			
 			if (player == null || player.Name == null)
 			{
-				Program.tConsole.WriteLine ("<Restrict> Invalid player in onPlayerEditSign.");
-				ev.Cancelled = true;
+				ProgramLog.Log ("<Restrict> Invalid player in OnSignTextSet.");
+				ctx.SetResult (HookResult.IGNORE);
 				return;
 			}
 			
@@ -289,20 +323,24 @@ namespace RestrictPlugin
 			
 			if (player.AuthenticatedAs == null)
 			{
-				ev.Cancelled = true;
+				ctx.SetResult (HookResult.IGNORE);
 				player.sendMessage ("<Restrict> You are not allowed to edit signs as a guest.");
 				player.sendMessage ("<Restrict> Type \"/reg password\" to request registration.");
 			}
 		}
-
-		public override void onPlayerTileChange (PlayerTileChangeEvent ev)
+		
+		[Hook(HookOrder.EARLY)]
+		void OnAlter (ref HookContext ctx, ref HookArgs.PlayerWorldAlteration args)
 		{
-			var player = ev.Sender as Player;
+			var player = ctx.Player;
+			
+			if (player == null && ctx.Sender is Projectile)
+				player = (ctx.Sender as Projectile).Creator as Player;
 			
 			if (player == null || player.Name == null)
 			{
-				Program.tConsole.WriteLine ("<Restrict> Invalid player in onPlayerTileChange.");
-				ev.Cancelled = true;
+				ProgramLog.Error.Log ("<Restrict> Invalid player in OnAlter.");
+				ctx.SetResult (HookResult.IGNORE);
 				return;
 			}
 			
@@ -310,62 +348,21 @@ namespace RestrictPlugin
 			
 			if (player.AuthenticatedAs == null)
 			{
-				ev.Cancelled = true;
-				player.sendMessage ("<Restrict> You are not allowed to alter the world as a guest.");
-				player.sendMessage ("<Restrict> Type \"/reg password\" to request registration.");
-			}
-		}
-
-		public override void onPlayerChestBreak (PlayerChestBreakEvent ev)
-		{
-			var player = ev.Sender as Player;
-			
-			if (player == null || player.Name == null)
-			{
-				Program.tConsole.WriteLine ("<Restrict> Invalid player in onPlayerChestBreak.");
-				ev.Cancelled = true;
-				return;
-			}
-			
-			if (! restrictGuests) return;
-			
-			if (player.AuthenticatedAs == null)
-			{
-				ev.Cancelled = true;
-				player.sendMessage ("<Restrict> You are not allowed to alter the world as a guest.");
-				player.sendMessage ("<Restrict> Type \"/reg password\" to request registration.");
-			}
-		}
-
-		public override void onPlayerFlowLiquid (PlayerFlowLiquidEvent ev)
-		{
-			var player = ev.Sender as Player;
-			
-			if (player == null || player.Name == null)
-			{
-				Program.tConsole.WriteLine ("<Restrict> Invalid player in onPlayerFlowLiquid.");
-				ev.Cancelled = true;
-				return;
-			}
-			
-			if (! restrictGuests) return;
-			
-			if (player.AuthenticatedAs == null)
-			{
-				ev.Cancelled = true;
+				ctx.SetResult (HookResult.RECTIFY);
 				player.sendMessage ("<Restrict> You are not allowed to alter the world as a guest.");
 				player.sendMessage ("<Restrict> Type \"/reg password\" to request registration.");
 			}
 		}
 		
-		public override void onPlayerProjectileUse (PlayerProjectileEvent ev)
+		[Hook(HookOrder.EARLY)]
+		void OnChestBreak (ref HookContext ctx, ref HookArgs.ChestBreakReceived args)
 		{
-			var player = ev.Sender as Player;
+			var player = ctx.Player;
 			
 			if (player == null || player.Name == null)
 			{
-				Program.tConsole.WriteLine ("<Restrict> Invalid player in onPlayerProjectileUse.");
-				ev.Cancelled = true;
+				ProgramLog.Log ("<Restrict> Invalid player in OnChestBreak.");
+				ctx.SetResult (HookResult.IGNORE);
 				return;
 			}
 			
@@ -373,7 +370,76 @@ namespace RestrictPlugin
 			
 			if (player.AuthenticatedAs == null)
 			{
-				switch (ev.Projectile.type)
+				ctx.SetResult (HookResult.RECTIFY);
+				player.sendMessage ("<Restrict> You are not allowed to alter the world as a guest.");
+				player.sendMessage ("<Restrict> Type \"/reg password\" to request registration.");
+			}
+		}
+
+		[Hook(HookOrder.EARLY)]
+		void OnChestOpen (ref HookContext ctx, ref HookArgs.ChestOpenReceived args)
+		{
+			var player = ctx.Player;
+			
+			if (player == null || player.Name == null)
+			{
+				ProgramLog.Log ("<Restrict> Invalid player in OnChestOpen.");
+				ctx.SetResult (HookResult.IGNORE);
+				return;
+			}
+			
+			if (! restrictGuests) return;
+			
+			if (player.AuthenticatedAs == null)
+			{
+				ctx.SetResult (HookResult.IGNORE);
+				player.sendMessage ("<Restrict> You are not allowed to open chests as a guest.");
+				player.sendMessage ("<Restrict> Type \"/reg password\" to request registration.");
+			}
+		}
+		
+		[Hook(HookOrder.LATE)]
+		void OnLiquidFlow (ref HookContext ctx, ref HookArgs.LiquidFlowReceived args)
+		{
+			var player = ctx.Player;
+			
+			if (player == null || player.Name == null)
+			{
+				ProgramLog.Log ("<Restrict> Invalid player in OnLiquidFlow.");
+				ctx.SetResult (HookResult.IGNORE);
+				return;
+			}
+			
+			if (! restrictGuests) return;
+			
+			if (player.AuthenticatedAs == null)
+			{
+				ctx.SetResult (HookResult.RECTIFY);
+				player.sendMessage ("<Restrict> You are not allowed to alter the world as a guest.");
+				player.sendMessage ("<Restrict> Type \"/reg password\" to request registration.");
+			}
+		}
+		
+		[Hook(HookOrder.EARLY)]
+		void OnProjectile (ref HookContext ctx, ref HookArgs.ProjectileReceived args)
+		{
+			var player = ctx.Player;
+			
+			if (player == null && ctx.Sender is Projectile)
+				player = (ctx.Sender as Projectile).Creator as Player;
+			
+			if (player == null || player.Name == null)
+			{
+				ProgramLog.Error.Log ("<Restrict> Invalid player in OnProjectile.");
+				ctx.SetResult (HookResult.IGNORE);
+				return;
+			}
+			
+			if (! restrictGuests) return;
+			
+			if (player.AuthenticatedAs == null)
+			{
+				switch (args.Type)
 				{
 					case ProjectileType.POWDER_PURIFICATION:
 					case ProjectileType.POWDER_VILE:
@@ -388,48 +454,30 @@ namespace RestrictPlugin
 					case ProjectileType.TOMBSTONE:
 					case ProjectileType.GLOWSTICK:
 					case ProjectileType.GLOWSTICK_STICKY:
-						ev.Cancelled = true;
+						ctx.SetResult (HookResult.ERASE);
 						player.sendMessage ("<Restrict> You are not allowed to use this projectile as a guest.");
 						player.sendMessage ("<Restrict> Type \"/reg password\" to request registration.");
-						break;
+						return;
 					default:
 						break;
 				}
 			}
+			
+			return;
 		}
 		
-		public override void onPlayerOpenChest (PlayerChestOpenEvent ev)
-		{
-			var player = ev.Sender as Player;
-			
-			if (player == null || player.Name == null)
-			{
-				Program.tConsole.WriteLine ("<Restrict> Invalid player in onPlayerOpenChest.");
-				ev.Cancelled = true;
-				return;
-			}
-
-			if (! restrictGuests) return;
-			
-			if (player.AuthenticatedAs == null)
-			{
-				ev.Cancelled = true;
-				player.sendMessage ("<Restrict> You are not allowed to open chests as a guest.");
-				player.sendMessage ("<Restrict> Type \"/reg password\" to request registration.");
-			}
-		}
-		
-		public override void onDoorStateChange (DoorStateChangeEvent ev)
+		[Hook(HookOrder.EARLY)]
+		void OnDoorStateChanged (ref HookContext ctx, ref HookArgs.DoorStateChanged args)
 		{
 			if ((!restrictGuests) || (!restrictGuestsDoors)) return;
 			
-			var player = ev.Sender as Player;
+			var player = ctx.Player;
 			
 			if (player == null) return;
 
 			if (player.AuthenticatedAs == null)
 			{
-				ev.Cancelled = true;
+				ctx.SetResult (HookResult.RECTIFY);
 				player.sendMessage ("<Restrict> You are not allowed to open and close doors as a guest.");
 				player.sendMessage ("<Restrict> Type \"/reg password\" to request registration.");
 			}

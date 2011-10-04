@@ -9,10 +9,10 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>RestrictPlugin</RootNamespace>
-    <AssemblyName>RestrictPlugin_0_32_0</AssemblyName>
+    <AssemblyName>RestrictPlugin</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <ReleaseVersion>0.32.0</ReleaseVersion>
+    <ReleaseVersion>0.36.0</ReleaseVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

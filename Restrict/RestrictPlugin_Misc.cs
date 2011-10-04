@@ -4,10 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 
-using Terraria_Server.Plugin;
 using Terraria_Server;
 using Terraria_Server.Misc;
-using Terraria_Server.Events;
 using System.IO;
 
 namespace RestrictPlugin
