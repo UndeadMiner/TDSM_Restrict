@@ -38,9 +38,14 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Terraria_Server, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\t9\Terraria_Server\bin\Debug\Terraria_Server.exe</HintPath>
+    <Reference Include="tdsm">
+      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\tdsm.mono.exe</HintPath>
+    </Reference>
+    <Reference Include="tdsm.api">
+      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\tdsm.api.dll</HintPath>
+    </Reference>
+    <Reference Include="tdsm.core">
+      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\Plugins\tdsm.core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
