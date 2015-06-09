@@ -658,7 +658,7 @@ namespace RestrictPlugin
 
     internal static class PlayerExtensions
     {
-        public static void SendTimed(this BasePlayer player, string message, int A = 255, float R = 255f, float G = 0f, float B = 0f)
+        public static void SendTimed(this BasePlayer player, string message, byte A = 255, byte R = 255, byte G = 0, byte B = 0)
         {
             const Int32 TimeInSeconds = 2; //TODO config
             const String TimerKey = "restrict-msg-timer";
