@@ -472,7 +472,7 @@ namespace RestrictPlugin
                 return;
             }
 
-            var address = Netplay.serverSock[player.whoAmi].remoteAddress.Split(':')[0];
+			var address = Netplay.Clients [player.whoAmI].Socket.GetRemoteAddress ().GetIdentifier (); //.Split(':')[0];
 
             var previous = requests.Values.Where(r => r != null && r.address == address && r.name == name);
             var cp = previous.Count();

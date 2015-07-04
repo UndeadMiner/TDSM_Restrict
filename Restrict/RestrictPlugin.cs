@@ -7,7 +7,7 @@ using tdsm.api.Command;
 using tdsm.api.Misc;
 using tdsm.api.Permissions;
 using tdsm.api.Plugin;
-using tdsm.core.ServerCore;
+//using tdsm.core.ServerCore;
 
 namespace RestrictPlugin
 {
@@ -172,7 +172,7 @@ namespace RestrictPlugin
                 .Calls(LockUsers<ISender, string>(this.PlayerLoginCommand));
 
             if (!enableDefaultPassword)
-                Terraria.Netplay.password = String.Empty;
+				Terraria.Netplay.ServerPassword = String.Empty;
         }
 
         Action<T, U> LockUsers<T, U>(Action<T, U> callback)
@@ -253,8 +253,9 @@ namespace RestrictPlugin
                 {
                     ctx.SetResult(HookResult.DEFAULT);
                     player.AuthenticatedAs = null;
+					#if TDSM_QUEUE
                     (ctx.Connection as ClientConnection).DesiredQueue = 0; //(int)LoginPriority.QUEUE_LOW_PRIO;
-
+					#endif
                     Tools.WriteLine("<Restrict> Letting user {0} from {1} in as guest.", name, player.IPAddress);
                 }
                 else
@@ -298,7 +299,9 @@ namespace RestrictPlugin
                 {
                     ctx.SetResult(HookResult.DEFAULT);
                     player.AuthenticatedAs = null;
+					#if TDSM_QUEUE
                     (ctx.Connection as ClientConnection).DesiredQueue = 0;
+					#endif
                 }
                 else
                     ctx.SetKick("Only registered users are allowed.");
@@ -320,12 +323,16 @@ namespace RestrictPlugin
 
             if (split.Length > 1 && split[1] == "op")
             {
+				#if TDSM_QUEUE
                 player.Op = true;
-                (ctx.Connection as ClientConnection).DesiredQueue = 3;
+				(ctx.Connection as ClientConnection).DesiredQueue = 3;
+				#endif
             }
             else
             {
-                (ctx.Connection as ClientConnection).DesiredQueue = 1;
+				#if TDSM_QUEUE
+				(ctx.Connection as ClientConnection).DesiredQueue = 1;
+				#endif
             }
 
             player.SetAuthentication(name, this.Name);

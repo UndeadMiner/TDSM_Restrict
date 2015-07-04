@@ -3,8 +3,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{0FEC21CD-5ABA-4A5D-A4F3-EB65F07DF68C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -39,6 +37,8 @@
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <WarningLevel>4</WarningLevel>
+    <Optimize>false</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -48,6 +48,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -59,11 +60,11 @@
     <Reference Include="tdsm.api">
       <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\tdsm.api.dll</HintPath>
     </Reference>
+    <Reference Include="tdsm">
+      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\tdsm.exe</HintPath>
+    </Reference>
     <Reference Include="tdsm.core">
       <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\Plugins\tdsm.core.dll</HintPath>
-    </Reference>
-    <Reference Include="tdsm.mono">
-      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\tdsm.mono.exe</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
