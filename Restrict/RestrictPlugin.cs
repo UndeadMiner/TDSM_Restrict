@@ -394,49 +394,75 @@ namespace RestrictPlugin
             }
         }
 
-        [Hook(HookOrder.EARLY)]
-        void OnAlter(ref HookContext ctx, ref HookArgs.PlayerWorldAlteration args)
-        {
-            var player = ctx.Player;
-            //TODO
-            //if (player == null && ctx.Sender is Projectile)
-            //    player = (ctx.Sender as Projectile).Creator as Player;
+		[Hook(HookOrder.EARLY)]
+		void OnAlter(ref HookContext ctx, ref HookArgs.PlayerWorldAlteration args)
+		{
+			var player = ctx.Player;
+			//TODO
+			//if (player == null && ctx.Sender is Projectile)
+			//    player = (ctx.Sender as Projectile).Creator as Player;
 
-            if (player == null || player.Name == null)
-            {
-                Tools.WriteLine("<Restrict> Invalid player in OnAlter.");
-                ctx.SetResult(HookResult.IGNORE);
-                return;
-            }
+			if (player == null || player.Name == null)
+			{
+				Tools.WriteLine("<Restrict> Invalid player in OnAlter.");
+				ctx.SetResult(HookResult.IGNORE);
+				return;
+			}
 
-            //if (!restrictGuests) return;
+			//if (!restrictGuests) return;
 
-            //if (player.AuthenticatedAs == null)
-            //{
-            //    ctx.SetResult(HookResult.RECTIFY);
-            //    player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
-            //    player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
-            //}
-            //else if (IsRestrictedForUser(ctx.Player, WorldAlter))
-            //{
-            //    ctx.SetResult(HookResult.RECTIFY);
-            //    player.SendTimed("<Restrict> You are not allowed to alter the world without permissions.");
-            //}
+			//if (player.AuthenticatedAs == null)
+			//{
+			//    ctx.SetResult(HookResult.RECTIFY);
+			//    player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
+			//    player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+			//}
+			//else if (IsRestrictedForUser(ctx.Player, WorldAlter))
+			//{
+			//    ctx.SetResult(HookResult.RECTIFY);
+			//    player.SendTimed("<Restrict> You are not allowed to alter the world without permissions.");
+			//}
 
-            if (IsRestrictedForUser(ctx.Player, WorldAlter))
-            {
-                ctx.SetResult(HookResult.RECTIFY);
-                if (player.AuthenticatedAs == null)
-                {
-                    player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
-                    player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
-                }
-                else
-                {
-                    player.SendTimed("<Restrict> You are not allowed to alter the world without permissions.");
-                }
-            }
-        }
+			if (IsRestrictedForUser(ctx.Player, WorldAlter))
+			{
+				ctx.SetResult(HookResult.RECTIFY);
+				if (player.AuthenticatedAs == null)
+				{
+					player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
+					player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+				}
+				else
+				{
+					player.SendTimed("<Restrict> You are not allowed to alter the world without permissions.");
+				}
+			}
+		}
+
+		[Hook(HookOrder.EARLY)]
+		void OnSectionAlter(ref HookContext ctx, ref HookArgs.TileSquareReceived args)
+		{
+			var player = ctx.Player;
+			if (player == null || player.Name == null)
+			{
+				Tools.WriteLine("<Restrict> Invalid player in OnAlter.");
+				ctx.SetResult(HookResult.IGNORE);
+				return;
+			}
+
+			if (IsRestrictedForUser(ctx.Player, WorldAlter))
+			{
+				ctx.SetResult(HookResult.RECTIFY);
+				if (player.AuthenticatedAs == null)
+				{
+					player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
+					player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+				}
+				else
+				{
+					player.SendTimed("<Restrict> You are not allowed to alter the world without permissions.");
+				}
+			}
+		}
 
         [Hook(HookOrder.EARLY)]
         void OnChestBreak(ref HookContext ctx, ref HookArgs.ChestBreakReceived args)
@@ -520,7 +546,8 @@ namespace RestrictPlugin
         }
 
         [Hook(HookOrder.EARLY)]
-        void OnProjectile(ref HookContext ctx, ref HookArgs.ProjectileReceived args)
+        void 
+        OnProjectile(ref HookContext ctx, ref HookArgs.ProjectileReceived args)
         {
             var player = ctx.Player;
             //TODO
@@ -535,6 +562,8 @@ namespace RestrictPlugin
             }
 
             if (!restrictGuests) return;
+
+            Tools.WriteLine("Projectile: " + args.Type);
 
             //if (player.AuthenticatedAs == null)
             {
@@ -566,6 +595,9 @@ namespace RestrictPlugin
                     case 43:
                     case 50:
                     case 53:
+                    case 439:
+                    case 440:
+                    case 453:
                         ctx.SetResult(HookResult.ERASE);
                         if (player.AuthenticatedAs == null)
                         {
