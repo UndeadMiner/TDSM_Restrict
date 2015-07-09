@@ -6,6 +6,7 @@ using System.Linq;
 using tdsm.api;
 using tdsm.api.Command;
 using Terraria;
+using tdsm.api.Logging;
 
 namespace RestrictPlugin
 {
@@ -86,12 +87,12 @@ namespace RestrictPlugin
                     else if (op)
                     {
                         sender.SendMessage("restrict.ru: Registered operator: " + name);
-                        Tools.WriteLine("<Restrict> Manually registered new operator: " + name);
+						ProgramLog.Admin.Log("<Restrict> Manually registered new operator: " + name);
                     }
                     else
                     {
                         sender.SendMessage("restrict.ru: Registered user: " + name);
-                        Tools.WriteLine("<Restrict> Manually registered new user: " + name);
+						ProgramLog.Admin.Log("<Restrict> Manually registered new user: " + name);
                     }
 
                 }
@@ -132,12 +133,12 @@ namespace RestrictPlugin
                         if (oldop && !op)
                         {
                             sender.SendMessage("restrict.ru: De-opped: " + name);
-                            Tools.WriteLine("<Restrict> De-opped: " + name);
+							ProgramLog.Admin.Log("<Restrict> De-opped: " + name);
                         }
                         else if (op && !oldop)
                         {
                             sender.SendMessage("restrict.ru: Opped: " + name);
-                            Tools.WriteLine("<Restrict> Opped: " + name);
+							ProgramLog.Admin.Log("<Restrict> Opped: " + name);
                         }
                     }
                 }
@@ -260,7 +261,7 @@ namespace RestrictPlugin
                     ", restrict-guests=", rg.ToString(),
                     ", restrict-guests-doors=" + rd.ToString());
 
-                Tools.WriteLine("<Restrict> " + msg);
+				ProgramLog.Admin.Log("<Restrict> " + msg);
                 sender.SendMessage("restrict.ro: " + msg);
             }
             catch (OptionException)
@@ -479,7 +480,7 @@ namespace RestrictPlugin
             if (cp > 0)
             {
                 if (cp > 1)
-                    Tools.WriteLine("<Restrict> Non-fatal error: more than one identical registration request.");
+					ProgramLog.Error.Log("<Restrict> Non-fatal error: more than one identical registration request.");
 
                 var rq = previous.First();
                 if (password != rq.password)
@@ -497,7 +498,7 @@ namespace RestrictPlugin
             sender.SendMessage("<Restrict> Request submitted, your password: " + password);
             var msg = string.Concat("<Restrict> New registration request ", requestCount, " for: ", name);
             Tools.NotifyAllOps(msg, false);
-            Tools.WriteLine(msg);
+			ProgramLog.Users.Log(msg);
 
             requestCount += 1;
         }
