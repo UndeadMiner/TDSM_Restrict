@@ -20,11 +20,11 @@ namespace RestrictPlugin
                 var force = false;
                 string password = null;
                 var options = new OptionSet()
-				{
-					{ "o|op", v => op = true },
-					{ "f|force", v => force = true },
-					{ "p|password=", v => password = v },
-				};
+                {
+                    { "o|op", v => op = true },
+                    { "f|force", v => force = true },
+                    { "p|password=", v => password = v },
+                };
 
                 var args = options.Parse(argz);
 
@@ -55,7 +55,7 @@ namespace RestrictPlugin
                     hash = Hash(name, args[1]);
                 //hash = args[1];
 
-                String.Format("User: {0}, Pass: {1}, Hash: {2}", name, password, hash);
+                String.Format("User: {0}, pUser: {3}, Pass: {1}, Hash: {2}", name, password, hash, pname);
 
                 if (hash != null)
                 {
@@ -87,12 +87,12 @@ namespace RestrictPlugin
                     else if (op)
                     {
                         sender.SendMessage("restrict.ru: Registered operator: " + name);
-						ProgramLog.Admin.Log("<Restrict> Manually registered new operator: " + name);
+                        ProgramLog.Admin.Log("<Restrict> Manually registered new operator: " + name);
                     }
                     else
                     {
                         sender.SendMessage("restrict.ru: Registered user: " + name);
-						ProgramLog.Admin.Log("<Restrict> Manually registered new user: " + name);
+                        ProgramLog.Admin.Log("<Restrict> Manually registered new user: " + name);
                     }
 
                 }
@@ -133,12 +133,12 @@ namespace RestrictPlugin
                         if (oldop && !op)
                         {
                             sender.SendMessage("restrict.ru: De-opped: " + name);
-							ProgramLog.Admin.Log("<Restrict> De-opped: " + name);
+                            ProgramLog.Admin.Log("<Restrict> De-opped: " + name);
                         }
                         else if (op && !oldop)
                         {
                             sender.SendMessage("restrict.ru: Opped: " + name);
-							ProgramLog.Admin.Log("<Restrict> Opped: " + name);
+                            ProgramLog.Admin.Log("<Restrict> Opped: " + name);
                         }
                     }
                 }
@@ -155,9 +155,9 @@ namespace RestrictPlugin
             {
                 var force = false;
                 var options = new OptionSet()
-				{
-					{ "f|force", v => force = true },
-				};
+                {
+                    { "f|force", v => force = true },
+                };
 
                 var args = options.Parse(argz);
 
@@ -179,7 +179,8 @@ namespace RestrictPlugin
                 {
                     name = player.Name;
                     player.Op = false;
-                    player.AuthenticatedAs = null;
+                    //player.AuthenticatedAs = null;
+                    player.SetAuthentication(null, this.Name);
 
                     if (player != sender)
                         player.SendMessage("<Restrict> Your registration has been revoked.");
@@ -214,19 +215,19 @@ namespace RestrictPlugin
                 var reload = false;
 
                 var options = new OptionSet()
-				{
-					{ "f|force", v => force = true },
-					{ "g|allow-guests=", (bool v) => { ag = v; changed = true; } },
-					{ "r|restrict-guests=", (bool v) => { rg = v; changed = true; } },
-					{ "d|restrict-guests-doors=", (bool v) => { rd = v; changed = true; } },
-					{ "L|reload-users", v => reload = true },
-					{ "s|server-id=", v =>
-						{
-							si = v;
-							changed = true; changed_si = true;
-						}
-					},
-				};
+                {
+                    { "f|force", v => force = true },
+                    { "g|allow-guests=", (bool v) => { ag = v; changed = true; } },
+                    { "r|restrict-guests=", (bool v) => { rg = v; changed = true; } },
+                    { "d|restrict-guests-doors=", (bool v) => { rd = v; changed = true; } },
+                    { "L|reload-users", v => reload = true },
+                    { "s|server-id=", v =>
+                        {
+                            si = v;
+                            changed = true; changed_si = true;
+                        }
+                    },
+                };
 
                 var args = options.Parse(argz);
 
@@ -261,7 +262,7 @@ namespace RestrictPlugin
                     ", restrict-guests=", rg.ToString(),
                     ", restrict-guests-doors=" + rd.ToString());
 
-				ProgramLog.Admin.Log("<Restrict> " + msg);
+                ProgramLog.Admin.Log("<Restrict> " + msg);
                 sender.SendMessage("restrict.ro: " + msg);
             }
             catch (OptionException)
@@ -335,10 +336,10 @@ namespace RestrictPlugin
         }
 
         static HashSet<string> obviousPasswords = new HashSet<string>()
-		{
-			"password", "yourpass", "yourpassword", "12345", "123456", "01234", "012345",
-			"hello", "mypass", "mypassword", "obama",
-		};
+        {
+            "password", "yourpass", "yourpassword", "12345", "123456", "01234", "012345",
+            "hello", "mypass", "mypassword", "obama",
+        };
 
         void PlayerPassCommand(ISender sender, string password)
         {
@@ -473,14 +474,14 @@ namespace RestrictPlugin
                 return;
             }
 
-			var address = Netplay.Clients [player.whoAmI].Socket.GetRemoteAddress ().GetIdentifier (); //.Split(':')[0];
+            var address = Netplay.Clients[player.whoAmI].Socket.GetRemoteAddress().GetIdentifier(); //.Split(':')[0];
 
             var previous = requests.Values.Where(r => r != null && r.address == address && r.name == name);
             var cp = previous.Count();
             if (cp > 0)
             {
                 if (cp > 1)
-					ProgramLog.Error.Log("<Restrict> Non-fatal error: more than one identical registration request.");
+                    ProgramLog.Error.Log("<Restrict> Non-fatal error: more than one identical registration request.");
 
                 var rq = previous.First();
                 if (password != rq.password)
@@ -498,7 +499,7 @@ namespace RestrictPlugin
             sender.SendMessage("<Restrict> Request submitted, your password: " + password);
             var msg = string.Concat("<Restrict> New registration request ", requestCount, " for: ", name);
             Tools.NotifyAllOps(msg, false);
-			ProgramLog.Users.Log(msg);
+            ProgramLog.Users.Log(msg);
 
             requestCount += 1;
         }
