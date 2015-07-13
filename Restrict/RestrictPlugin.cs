@@ -93,13 +93,15 @@ namespace RestrictPlugin
 
             CreateDirectory(pluginFolder);
 
-            properties = new PropertiesFile(pluginFolder + Path.DirectorySeparatorChar + "restrict.properties");
+			properties = new PropertiesFile(pluginFolder + Path.DirectorySeparatorChar + "restrict.properties", false);
             //properties.Load();
             var dummy1 = allowGuests;
             var dummy2 = restrictGuests;
             var dummy3 = restrictGuestsDoors;
             var dummy4 = serverId;
             var dummy5 = restrictGuestsNPCs;
+			var dummy6 = enableDefaultPassword;
+			var dummy7 = verbose;
             properties.Save();
 
             users = new PropertiesFile(pluginFolder + Path.DirectorySeparatorChar + "restrict_users.properties", false);
