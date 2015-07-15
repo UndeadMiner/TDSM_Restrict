@@ -57,14 +57,11 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="tdsm.api">
-      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\tdsm.api.dll</HintPath>
-    </Reference>
     <Reference Include="tdsm">
       <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\tdsm.exe</HintPath>
     </Reference>
-    <Reference Include="tdsm.core">
-      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\Plugins\tdsm.core.dll</HintPath>
+    <Reference Include="tdsm.api">
+      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\TDSM.API.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -73,6 +70,7 @@
     <Compile Include="NDesk.Options\Options.cs" />
     <Compile Include="RestrictPlugin_Commands.cs" />
     <Compile Include="RestrictPlugin_Misc.cs" />
+    <Compile Include="UserDB.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />

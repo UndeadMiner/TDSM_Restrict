@@ -2,14 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using tdsm.api;
-using tdsm.api.Command;
-using tdsm.api.Misc;
-using tdsm.api.Permissions;
-using tdsm.api.Plugin;
+using TDSM.API;
+using TDSM.API.Command;
+using TDSM.API.Misc;
+using TDSM.API.Permissions;
+using TDSM.API.Plugin;
 
-//using tdsm.core.ServerCore;
-using tdsm.api.Logging;
+//using TDSM.Core.ServerCore;
+using TDSM.API.Logging;
 
 namespace RestrictPlugin
 {
@@ -23,7 +23,7 @@ namespace RestrictPlugin
         }
 
         PropertiesFile properties;
-        PropertiesFile users;
+        UserDB users;
 
         Dictionary<int, RegistrationRequest> requests;
         int requestCount = 0;
@@ -93,20 +93,19 @@ namespace RestrictPlugin
 
             CreateDirectory(pluginFolder);
 
-			properties = new PropertiesFile(pluginFolder + Path.DirectorySeparatorChar + "restrict.properties", false);
+            properties = new PropertiesFile(pluginFolder + Path.DirectorySeparatorChar + "restrict.properties", false);
             //properties.Load();
             var dummy1 = allowGuests;
             var dummy2 = restrictGuests;
             var dummy3 = restrictGuestsDoors;
             var dummy4 = serverId;
             var dummy5 = restrictGuestsNPCs;
-			var dummy6 = enableDefaultPassword;
-			var dummy7 = verbose;
+            var dummy6 = enableDefaultPassword;
+            var dummy7 = verbose;
             properties.Save();
 
-            users = new PropertiesFile(pluginFolder + Path.DirectorySeparatorChar + "restrict_users.properties", false);
-            //users.Load();
-            users.Save();
+            users = new UserDB();
+            users.Initialise();
 
             AddCommand("ru")
                 .WithDescription("Register users or change their accounts")
@@ -228,7 +227,8 @@ namespace RestrictPlugin
         [Hook(HookOrder.EARLY)]
         void OnPlayerDataReceived(ref HookContext ctx, ref HookArgs.PlayerDataReceived args)
         {
-            if (ctx.Player != null && ctx.Player.AuthenticatedAs != null) return;
+            if (ctx.Player != null && ctx.Player.AuthenticatedAs != null)
+                return;
             ctx.SetKick("Malfunction during login process, try again.");
 
             if (!args.NameChecked)
@@ -588,7 +588,7 @@ namespace RestrictPlugin
             {
                 switch (args.Type)
                 {
-                    /*case ProjectileType.N10_PURIFICATION_POWDER:
+                /*case ProjectileType.N10_PURIFICATION_POWDER:
                         case ProjectileType.N11_VILE_POWDER:
                         case ProjectileType.N28_BOMB:
                         case ProjectileType.N37_STICKY_BOMB:
@@ -696,9 +696,9 @@ namespace RestrictPlugin
                 {
                     var user = PermissionsManager.IsPermitted(node, player);
                     var grp = PermissionsManager.IsPermittedForGroup(node, (attributes) =>
-                   {
-                       return attributes.ContainsKey("ApplyToRegistered") && attributes["ApplyToRegistered"].ToLower() == "true";
-                   });
+                        {
+                            return attributes.ContainsKey("ApplyToRegistered") && attributes["ApplyToRegistered"].ToLower() == "true";
+                        });
 
                     if (user == Permission.Denied)
                         return true;
@@ -710,9 +710,9 @@ namespace RestrictPlugin
                 else
                 {
                     var grp = PermissionsManager.IsPermittedForGroup(node, (attributes) =>
-                   {
-                       return attributes.ContainsKey("ApplyToGuests") && attributes["ApplyToGuests"].ToLower() == "true";
-                   });
+                        {
+                            return attributes.ContainsKey("ApplyToGuests") && attributes["ApplyToGuests"].ToLower() == "true";
+                        });
 
                     return grp != Permission.Permitted;
                 }
