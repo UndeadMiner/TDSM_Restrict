@@ -102,7 +102,7 @@ namespace RestrictPlugin
             }
         }
 
-        public bool Update(string username, string password)
+        public bool Update(string username, string password, bool op)
         {
 #if API_Storage
             using (var bl = Storage.GetBuilder(SQLSafePluginName))
@@ -112,14 +112,15 @@ namespace RestrictPlugin
                     bl.InsertInto(UserTable.TableName, new DataParameter[] {
                         new DataParameter(UserTable.ColumnNames.Username, username),
                         new DataParameter(UserTable.ColumnNames.Password, password),
-                        new DataParameter(UserTable.ColumnNames.Operator, false),
+                        new DataParameter(UserTable.ColumnNames.Operator, op),
                         new DataParameter(UserTable.ColumnNames.DateAdded, DateTime.Now)
                     });
                 }
                 else
                 {
                     bl.Update(UserTable.TableName, new DataParameter[] {
-                            new DataParameter(UserTable.ColumnNames.Password, password)
+                            new DataParameter(UserTable.ColumnNames.Password, password),
+                            new DataParameter(UserTable.ColumnNames.Operator, op)
                         },
                         new WhereFilter(UserTable.ColumnNames.Username, username)
                     );
@@ -128,6 +129,7 @@ namespace RestrictPlugin
                 return Storage.ExecuteNonQuery(bl) > 0;
             }
 #else
+            if (op) username += ":op";
             return users.Update(username, password);
 #endif
         }

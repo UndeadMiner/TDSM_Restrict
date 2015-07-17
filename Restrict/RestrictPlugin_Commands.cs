@@ -62,10 +62,10 @@ namespace RestrictPlugin
                     var old = users.Find(pname) ?? users.Find(oname);
 
                     var val = hash;
-                    if (op) val += ":op";
+                    //if (op) val += ":op";
 
-                    users.Update(oname, null);
-                    users.Update(pname, val);
+                    users.Update(oname, null, op);
+                    users.Update(pname, val, op);
                     users.Save();
 
                     if (player != null)
@@ -124,10 +124,10 @@ namespace RestrictPlugin
                     if (oldop != op)
                     {
                         var val = split[0];
-                        if (op) val += ":op";
+                        //if (op) val += ":op";
 
-                        users.Update(oname, null);
-                        users.Update(pname, val);
+                        users.Update(oname, null, op);
+                        users.Update(pname, val, op);
                         users.Save();
 
                         if (oldop && !op)
@@ -189,8 +189,8 @@ namespace RestrictPlugin
                 var pname = NameTransform(name);
                 var oname = OldNameTransform(name);
 
-                users.Update(pname, null);
-                users.Update(oname, null);
+                users.Update(pname, null, false);
+                users.Update(oname, null, false);
                 users.Save();
 
                 sender.SendMessage("restrict.ur: Unregistered user: " + name);
@@ -463,11 +463,13 @@ namespace RestrictPlugin
                     return;
                 }
 
+                bool op = false;
                 if (split.Length > 1 && split[1] == "op")
-                    hash = hash + ":op";
+                    op = true;
+                    //hash = hash + ":op";
 
-                users.Update(oname, null);
-                users.Update(pname, hash);
+                users.Update(oname, null, op);
+                users.Update(pname, hash, op);
                 users.Save();
 
                 sender.SendMessage("<Restrict> Your new password is: " + password);
@@ -511,7 +513,7 @@ namespace RestrictPlugin
             var pname = NameTransform(rq.name);
             var hash = Hash(rq.name, rq.password);
 
-            users.Update(pname, hash);
+            users.Update(pname, hash, false);
             users.Save();
 
             var player = Tools.GetPlayerByName(rq.name);
