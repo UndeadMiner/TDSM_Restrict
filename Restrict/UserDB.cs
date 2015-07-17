@@ -22,6 +22,7 @@ namespace RestrictPlugin
                 new TableColumn("Id", typeof(Int32), true, true),
                 new TableColumn("Username", typeof(String), 255),
                 new TableColumn("Password", typeof(String), 255),
+                new TableColumn("Operator", typeof(Boolean)),
                 new TableColumn("DateAdded", typeof(DateTime))
             };
 
