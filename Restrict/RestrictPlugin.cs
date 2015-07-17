@@ -104,9 +104,6 @@ namespace RestrictPlugin
             var dummy7 = verbose;
             properties.Save();
 
-            users = new UserDB();
-            users.Initialise();
-
             AddCommand("ru")
                 .WithDescription("Register users or change their accounts")
                 .SetOldHelpStyle()
@@ -222,6 +219,18 @@ namespace RestrictPlugin
         protected override void Disabled()
         {
             ProgramLog.Log(base.Name + " disabled.");
+        }
+
+        [Hook]
+        void OnStateChange(ref HookContext ctx, ref HookArgs.ServerStateChange args)
+        {
+            if (args.ServerChangeState == TDSM.API.ServerState.Initialising)
+            {
+                //Data connectors must have loaded by now
+
+                users = new UserDB();
+                users.Initialise();
+            }
         }
 
         [Hook(HookOrder.EARLY)]
