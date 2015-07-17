@@ -10,20 +10,29 @@ namespace RestrictPlugin
 {
     public class UserDB
     {
-        #if API_Storage
+#if API_Storage
         const String SQLSafePluginName = "Restrict";
 
         private class UserTable
         {
             public const String TableName = "Users";
 
+            public static class ColumnNames
+            {
+                public const String Id = "Id";
+                public const String Username = "Username";
+                public const String Password = "Password";
+                public const String Operator = "Operator";
+                public const String DateAdded = "DateAdded";
+            }
+
             public static readonly TableColumn[] Columns = new TableColumn[]
             {
-                new TableColumn("Id", typeof(Int32), true, true),
-                new TableColumn("Username", typeof(String), 255),
-                new TableColumn("Password", typeof(String), 255),
-                new TableColumn("Operator", typeof(Boolean)),
-                new TableColumn("DateAdded", typeof(DateTime))
+                new TableColumn(ColumnNames.Id, typeof(Int32), true, true),
+                new TableColumn(ColumnNames.Username, typeof(String), 255),
+                new TableColumn(ColumnNames.Password, typeof(String), 255),
+                new TableColumn(ColumnNames.Operator, typeof(Boolean)),
+                new TableColumn(ColumnNames.DateAdded, typeof(DateTime))
             };
 
             public static bool Exists()
@@ -46,14 +55,14 @@ namespace RestrictPlugin
                 }
             }
         }
-        
-        #else
+
+#else
         PropertiesFile users;
-        #endif
+#endif
 
         public void Initialise()
         {
-            #if API_Storage
+#if API_Storage
             //Check to see if table exists
 
             if (!UserTable.Exists())
@@ -62,11 +71,11 @@ namespace RestrictPlugin
                 UserTable.Create();
             }
 
-            #else
+#else
             string pluginFolder = Globals.DataPath + Path.DirectorySeparatorChar + "Restrict";
             users = new PropertiesFile(pluginFolder + Path.DirectorySeparatorChar + "restrict_users.properties", false);
             users.Save();
-            #endif
+#endif
         }
 
         /// <summary>
@@ -76,8 +85,8 @@ namespace RestrictPlugin
         public int Count
         {
             get
-            { 
-                #if API_Storage
+            {
+#if API_Storage
                 using (var bl = Storage.GetBuilder(SQLSafePluginName))
                 {
                     bl
@@ -87,69 +96,88 @@ namespace RestrictPlugin
 
                     return Storage.ExecuteScalar<Int32>(bl);
                 }
-                #else
+#else
                 return users.Count;
-                #endif
+#endif
             }
         }
 
         public bool Update(string username, string password)
-        { 
-            #if API_Storage
+        {
+#if API_Storage
             using (var bl = Storage.GetBuilder(SQLSafePluginName))
             {
-                bl.Update(UserTable.TableName, new DataParameter[]
-                    { 
-                        new DataParameter("Password", password)
-                    }, 
-                    new WhereFilter("Username", username)
-                );
+                if (!UserExists(username))
+                {
+                    bl.InsertInto(UserTable.TableName, new DataParameter[] {
+                        new DataParameter(UserTable.ColumnNames.Username, username),
+                        new DataParameter(UserTable.ColumnNames.Password, password),
+                        new DataParameter(UserTable.ColumnNames.Operator, false),
+                        new DataParameter(UserTable.ColumnNames.DateAdded, DateTime.Now)
+                    });
+                }
+                else
+                {
+                    bl.Update(UserTable.TableName, new DataParameter[] {
+                            new DataParameter(UserTable.ColumnNames.Password, password)
+                        },
+                        new WhereFilter(UserTable.ColumnNames.Username, username)
+                    );
+                }
 
                 return Storage.ExecuteNonQuery(bl) > 0;
             }
-            #else
+#else
             return users.Update(username, password);
-            #endif
+#endif
         }
 
         public void Load()
         {
-            #if API_Storage
-            #else
+#if API_Storage
+#else
             users.Load();
-            #endif
+#endif
         }
 
         public void Save()
         {
-            #if API_Storage
-            #else
+#if API_Storage
+#else
             users.Save();
-            #endif
+#endif
         }
 
         public string Find(string username)
         {
-            #if API_Storage
+#if API_Storage
             using (var bl = Storage.GetBuilder(SQLSafePluginName))
             {
-                bl.SelectFrom(UserTable.TableName, new string[] { "Password" }, new WhereFilter("Username", username));
+                bl.SelectFrom(UserTable.TableName, new string[] { UserTable.ColumnNames.Password }, new WhereFilter(UserTable.ColumnNames.Username, username));
 
-                var results = Storage.ExecuteArray<String>(bl);
-                if (results.Length > 0)
-                    return results[0];
+                return Storage.ExecuteScalar<String>(bl);
             }
-
-            return null;
-            #else
+#else
             return users.Find(username);
-            #endif
+#endif
         }
 
+#if API_Storage
+        public bool UserExists(string username)
+        {
+            using (var bl = Storage.GetBuilder(SQLSafePluginName))
+            {
+                bl.Select().Count().From(UserTable.TableName).Where(new WhereFilter(UserTable.ColumnNames.Username, username));
 
-        #if API_Storage
-        
-        #endif
+                return Storage.ExecuteScalar<Int64>(bl) > 0;
+            }
+        }
+#endif
+
+
+#if API_Storage
+
+#endif
     }
 }
 
