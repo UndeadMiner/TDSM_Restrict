@@ -1,3 +1,4 @@
+#define LEGACY
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -42,10 +43,12 @@ namespace RestrictPlugin
             return name.ToLower().Replace("=", "_EQUAL_");
         }
 
+        #if LEGACY
         static string OldNameTransform(string name)
         {
             return string.Concat("<", name.Replace("=", "_EQUAL_"), ">");
         }
+        #endif
     }
 }
 

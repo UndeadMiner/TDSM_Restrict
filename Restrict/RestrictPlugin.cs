@@ -1,11 +1,11 @@
-﻿using Microsoft.Xna.Framework;
+﻿#define LEGACY
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using TDSM.API;
 using TDSM.API.Command;
 using TDSM.API.Misc;
-using TDSM.API.Permissions;
 using TDSM.API.Plugin;
 
 //using TDSM.Core.ServerCore;
@@ -259,12 +259,18 @@ namespace RestrictPlugin
 
             var name = args.Name;
             var pname = NameTransform(name);
+            #if LEGACY
             var oname = OldNameTransform(name);
+            #endif
             string entry = null;
 
             lock (users)
             {
+                #if LEGACY
                 entry = users.Find(pname) ?? users.Find(oname);
+                #else
+                entry = users.Find(pname);
+                #endif
             }
 
             if (entry == null)
@@ -306,14 +312,20 @@ namespace RestrictPlugin
 
             var name = player.Name;
             var pname = NameTransform(name);
+            #if LEGACY
             var oname = OldNameTransform(name);
+            #endif
             string entry = null;
 
             String.Format("User: {0}, Pass: {1}, pname: {2}, player.name: {3}", name, args.Password, pname, player.name);
 
             lock (users)
             {
+                #if LEGACY
                 entry = users.Find(pname) ?? users.Find(oname);
+                #else
+                entry = users.Find(pname);
+                #endif
             }
 
             if (entry == null)
@@ -698,34 +710,39 @@ namespace RestrictPlugin
 
         public bool IsRestrictedForUser(BasePlayer player, string node)
         {
-            if (!player.Op && PermissionsManager.IsSet)
+            #if LEGACY
+            if (!player.Op && TDSM.API.Permissions.PermissionsManager.IsSet)
             {
                 var isRegistered = player.AuthenticatedAs != null;
                 if (isRegistered)
                 {
-                    var user = PermissionsManager.IsPermitted(node, player);
-                    var grp = PermissionsManager.IsPermittedForGroup(node, (attributes) =>
+                    var user = TDSM.API.Permissions.PermissionsManager.IsPermitted(node, player);
+                    var grp = TDSM.API.Permissions.PermissionsManager.IsPermittedForGroup(node, (attributes) =>
                         {
                             return attributes.ContainsKey("ApplyToRegistered") && attributes["ApplyToRegistered"].ToLower() == "true";
                         });
 
-                    if (user == Permission.Denied)
+                    if (user == TDSM.API.Permissions.Permission.Denied)
                         return true;
-                    else if (user == Permission.Permitted)
+                    else if (user == TDSM.API.Permissions.Permission.Permitted)
                         return false;
 
-                    return grp != Permission.Permitted;
+                    return grp != TDSM.API.Permissions.Permission.Permitted;
                 }
                 else
                 {
-                    var grp = PermissionsManager.IsPermittedForGroup(node, (attributes) =>
+                    var grp = TDSM.API.Permissions.PermissionsManager.IsPermittedForGroup(node, (attributes) =>
                         {
                             return attributes.ContainsKey("ApplyToGuests") && attributes["ApplyToGuests"].ToLower() == "true";
                         });
 
-                    return grp != Permission.Permitted;
+                    return grp != TDSM.API.Permissions.Permission.Permitted;
                 }
             }
+            #else
+            if(!player.Op && TDSM.API.Data.Storage.IsAvailable)
+                return TDSM.API.Data.Storage.IsPermitted(node, player) == TDSM.API.Data.Permission.Permitted;
+            #endif
 
             return !player.Op;
         }
