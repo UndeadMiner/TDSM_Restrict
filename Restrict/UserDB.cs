@@ -1,4 +1,4 @@
-﻿//#define API_Storage
+﻿#define API_Storage
 using System;
 using TDSM.API;
 using System.IO;
@@ -10,7 +10,7 @@ namespace RestrictPlugin
 {
     public class UserDB
     {
-#if !API_Storage
+        #if !API_Storage
         PropertiesFile users;
 #endif
 
@@ -72,19 +72,27 @@ namespace RestrictPlugin
 #endif
         }
 
-        public string Find(string username)
+        public UserDetails? Find(string username)
         {
 #if API_Storage
-            return AuthenticatedUsers.GetUserPassword(username);
+            return AuthenticatedUsers.GetUser(username);
 #else
-            return users.Find(username);
+            var pw =  users.Find(username);
+
+            if(pw != null ) {
+                var sp = pw.Split(':');
+
+                return new UserDetails()
+                {
+                    Password = sp.Length == 1 ? pw : sp[0],
+                    IsOperator = sp.Length == 1 ? false : sp[1] == "op",
+                    Username = username
+                }
+            }
+
+            return null;
 #endif
         }
-
-
-        #if API_Storage
-
-        #endif
     }
 }
 

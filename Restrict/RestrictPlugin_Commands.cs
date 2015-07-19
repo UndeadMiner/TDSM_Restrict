@@ -7,6 +7,7 @@ using TDSM.API;
 using TDSM.API.Command;
 using Terraria;
 using TDSM.API.Logging;
+using TDSM.API.Data;
 
 namespace RestrictPlugin
 {
@@ -117,8 +118,9 @@ namespace RestrictPlugin
                         return;
                     }
 
-                    var split = entry.Split(':');
-                    var oldop = split.Length > 1 && split[1] == "op";
+//                    var split = entry.Split(':');
+//                    var oldop = split.Length > 1 && split[1] == "op";
+                    var oldop = entry.Value.Operator;
 
                     if (player != null)
                     {
@@ -134,7 +136,8 @@ namespace RestrictPlugin
 
                     if (oldop != op)
                     {
-                        var val = split[0];
+//                        var val = split[0];
+                        var val = entry.Value.Password;
                         //if (op) val += ":op";
 
                         #if LEGACY
@@ -232,14 +235,27 @@ namespace RestrictPlugin
                 var options = new OptionSet()
                 {
                     { "f|force", v => force = true },
-                    { "g|allow-guests=", (bool v) => { ag = v; changed = true; } },
-                    { "r|restrict-guests=", (bool v) => { rg = v; changed = true; } },
-                    { "d|restrict-guests-doors=", (bool v) => { rd = v; changed = true; } },
+                    { "g|allow-guests=", (bool v) =>
+                        {
+                            ag = v;
+                            changed = true;
+                        } },
+                    { "r|restrict-guests=", (bool v) =>
+                        {
+                            rg = v;
+                            changed = true;
+                        } },
+                    { "d|restrict-guests-doors=", (bool v) =>
+                        {
+                            rd = v;
+                            changed = true;
+                        } },
                     { "L|reload-users", v => reload = true },
                     { "s|server-id=", v =>
                         {
                             si = v;
-                            changed = true; changed_si = true;
+                            changed = true;
+                            changed_si = true;
                         }
                     },
                 };
@@ -272,10 +288,10 @@ namespace RestrictPlugin
                 }
 
                 var msg = string.Concat(
-                    "Options set: server-id=", si,
-                    ", allow-guests=", ag.ToString(),
-                    ", restrict-guests=", rg.ToString(),
-                    ", restrict-guests-doors=" + rd.ToString());
+                              "Options set: server-id=", si,
+                              ", allow-guests=", ag.ToString(),
+                              ", restrict-guests=", rg.ToString(),
+                              ", restrict-guests-doors=" + rd.ToString());
 
                 ProgramLog.Admin.Log("<Restrict> " + msg);
                 sender.SendMessage("restrict.ro: " + msg);
@@ -343,7 +359,8 @@ namespace RestrictPlugin
                 foreach (var kv in requests)
                 {
                     var rq = kv.Value;
-                    if (rq == null) continue;
+                    if (rq == null)
+                        continue;
 
                     sender.SendMessage(string.Format("{0,3} : {1} : {2}", kv.Key, rq.address, rq.name));
                 }
@@ -368,7 +385,8 @@ namespace RestrictPlugin
 
         void PlayerLoginCommand(ISender sender, string password)
         {
-            if (!(sender is Player)) return;
+            if (!(sender is Player))
+                return;
 
             var player = (Player)sender;
 
@@ -379,7 +397,7 @@ namespace RestrictPlugin
                 #if LEGACY
                 var oname = OldNameTransform(name);
                 #endif
-                string entry = null;
+                UserDetails? entry = null;
 
                 lock (users)
                 {
@@ -392,8 +410,9 @@ namespace RestrictPlugin
 
                 if (entry != null)
                 {
-                    var split = entry.Split(':');
-                    var hash = split[0];
+//                    var split = entry.Split(':');
+//                    var hash = split[0];
+                    var hash = entry.Value.Password;
                     var hash2 = Hash(name, password);
 
                     if (hash != hash2)
@@ -402,10 +421,12 @@ namespace RestrictPlugin
                         return;
                     }
 
-                    if (split.Length > 1 && split[1] == "op")
-                    {
+//                    if (split.Length > 1 && split[1] == "op")
+//                    {
+//                        player.Op = true;
+//                    }
+                    if (entry.Value.Operator)
                         player.Op = true;
-                    }
 
                     player.SetAuthentication(name, this.Name);
 
@@ -414,14 +435,17 @@ namespace RestrictPlugin
                     else
                         player.Message(255, new Color(128, 255, 128), "Welcome back, registered user.");
                 }
-                else sender.SendMessage("Authentication failed.", 255, 255, 180, 180);
+                else
+                    sender.SendMessage("Authentication failed.", 255, 255, 180, 180);
             }
-            else sender.SendMessage("You are already authenticated.", 255, 255, 180, 180);
+            else
+                sender.SendMessage("You are already authenticated.", 255, 255, 180, 180);
         }
 
         void PlayerCommand(string command, ISender sender, string password)
         {
-            if (!(sender is Player)) return;
+            if (!(sender is Player))
+                return;
 
             var player = (Player)sender;
 
@@ -478,20 +502,22 @@ namespace RestrictPlugin
                 var oname = OldNameTransform(name);
                 var split = (users.Find(pname) ?? users.Find(oname)).Split(':');
                 #else
-                var split = (users.Find(pname)).Split(':');
+//                var split = (users.Find(pname)).Split(':');
+                var pw = users.Find(pname);
                 #endif
                 var hash = Hash(name, password);
 
-                if (hash == split[0])
+//                if (hash == split[0])
+                if (hash == pw.Value.Password)
                 {
                     sender.SendMessage("<Restrict> Already registered.");
                     return;
                 }
 
-                bool op = false;
-                if (split.Length > 1 && split[1] == "op")
-                    op = true;
-                    //hash = hash + ":op";
+                bool op = pw.Value.Operator;
+//                if (split.Length > 1 && split[1] == "op")
+//                    op = true;
+                //hash = hash + ":op";
 
                 #if LEGACY
                 users.Update(oname, null, op);

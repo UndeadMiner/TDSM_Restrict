@@ -1,4 +1,4 @@
-﻿#define LEGACY
+﻿//#define LEGACY
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ using TDSM.API.Plugin;
 
 //using TDSM.Core.ServerCore;
 using TDSM.API.Logging;
+using TDSM.API.Data;
 
 namespace RestrictPlugin
 {
@@ -262,7 +263,7 @@ namespace RestrictPlugin
             #if LEGACY
             var oname = OldNameTransform(name);
             #endif
-            string entry = null;
+            UserDetails? entry = null;
 
             lock (users)
             {
@@ -315,7 +316,7 @@ namespace RestrictPlugin
             #if LEGACY
             var oname = OldNameTransform(name);
             #endif
-            string entry = null;
+            UserDetails? entry = null;
 
             String.Format("User: {0}, Pass: {1}, pname: {2}, player.name: {3}", name, args.Password, pname, player.name);
 
@@ -345,8 +346,9 @@ namespace RestrictPlugin
                 return;
             }
 
-            var split = entry.Split(':');
-            var hash = split[0];
+//            var split = entry.Split(':');
+//            var hash = split[0];
+            var hash = entry.Value.Password;
             var hash2 = Hash(name, args.Password);
 
             String.Format("User: {0}, Pass: {1}, Hash: {3}, Hash2: {2}", name, args.Password, hash2, hash);
@@ -357,19 +359,22 @@ namespace RestrictPlugin
                 return;
             }
 
-            if (split.Length > 1 && split[1] == "op")
-            {
-#if TDSM_QUEUE
+            if (entry.Value.Operator)
                 player.Op = true;
-				(ctx.Connection as ClientConnection).DesiredQueue = 3;
-#endif
-            }
-            else
-            {
-#if TDSM_QUEUE
-				(ctx.Connection as ClientConnection).DesiredQueue = 1;
-#endif
-            }
+            
+//            if (split.Length > 1 && split[1] == "op")
+//            {
+//#if TDSM_QUEUE
+//                player.Op = true;
+//				(ctx.Connection as ClientConnection).DesiredQueue = 3;
+//#endif
+//            }
+//            else
+//            {
+//#if TDSM_QUEUE
+//				(ctx.Connection as ClientConnection).DesiredQueue = 1;
+//#endif
+//            }
 
             player.SetAuthentication(name, this.Name);
             ctx.SetResult(HookResult.DEFAULT);
@@ -740,8 +745,8 @@ namespace RestrictPlugin
                 }
             }
             #else
-            if(!player.Op && TDSM.API.Data.Storage.IsAvailable)
-                return TDSM.API.Data.Storage.IsPermitted(node, player) == TDSM.API.Data.Permission.Permitted;
+            if (!player.Op && TDSM.API.Data.Storage.IsAvailable)
+                return TDSM.API.Data.Storage.IsPermitted(node, player) != TDSM.API.Data.Permission.Permitted;
             #endif
 
             return !player.Op;
