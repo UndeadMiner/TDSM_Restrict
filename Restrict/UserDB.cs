@@ -72,7 +72,7 @@ namespace RestrictPlugin
 #endif
         }
 
-        public UserDetails? Find(string username)
+        public UserDetails Find(string username)
         {
 #if API_Storage
             return AuthenticatedUsers.GetUser(username);

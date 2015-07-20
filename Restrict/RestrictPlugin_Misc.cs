@@ -40,7 +40,11 @@ namespace RestrictPlugin
 
         static string NameTransform(string name)
         {
+            #if LEGACY
             return name.ToLower().Replace("=", "_EQUAL_");
+            #else
+            return name.ToLower();
+            #endif
         }
 
         #if LEGACY

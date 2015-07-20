@@ -74,7 +74,8 @@ namespace RestrictPlugin
                     #if LEGACY
                     users.Update(oname, null, op);
                     #endif
-                    users.Update(pname, val, op);
+                    //                    users.Update(pname, val, op);
+                    users.Update(name, val, op);
                     users.Save();
 
                     if (player != null)
@@ -120,7 +121,7 @@ namespace RestrictPlugin
 
 //                    var split = entry.Split(':');
 //                    var oldop = split.Length > 1 && split[1] == "op";
-                    var oldop = entry.Value.Operator;
+                    var oldop = entry.Operator;
 
                     if (player != null)
                     {
@@ -137,13 +138,14 @@ namespace RestrictPlugin
                     if (oldop != op)
                     {
 //                        var val = split[0];
-                        var val = entry.Value.Password;
+                        var val = entry.Password;
                         //if (op) val += ":op";
 
                         #if LEGACY
                         users.Update(oname, null, op);
                         #endif
-                        users.Update(pname, val, op);
+//                        users.Update(pname, val, op);
+                        users.Update(name, val, op);
                         users.Save();
 
                         if (oldop && !op)
@@ -208,7 +210,8 @@ namespace RestrictPlugin
 
                 users.Update(oname, null, false);
                 #endif
-                users.Update(pname, null, false);
+//                users.Update(pname, null, false);
+                users.Update(name, null, false);
                 users.Save();
 
                 sender.SendMessage("restrict.ur: Unregistered user: " + name);
@@ -239,17 +242,20 @@ namespace RestrictPlugin
                         {
                             ag = v;
                             changed = true;
-                        } },
+                        }
+                    },
                     { "r|restrict-guests=", (bool v) =>
                         {
                             rg = v;
                             changed = true;
-                        } },
+                        }
+                    },
                     { "d|restrict-guests-doors=", (bool v) =>
                         {
                             rd = v;
                             changed = true;
-                        } },
+                        }
+                    },
                     { "L|reload-users", v => reload = true },
                     { "s|server-id=", v =>
                         {
@@ -397,7 +403,7 @@ namespace RestrictPlugin
                 #if LEGACY
                 var oname = OldNameTransform(name);
                 #endif
-                UserDetails? entry = null;
+                UserDetails entry = null;
 
                 lock (users)
                 {
@@ -412,7 +418,7 @@ namespace RestrictPlugin
                 {
 //                    var split = entry.Split(':');
 //                    var hash = split[0];
-                    var hash = entry.Value.Password;
+                    var hash = entry.Password;
                     var hash2 = Hash(name, password);
 
                     if (hash != hash2)
@@ -425,7 +431,7 @@ namespace RestrictPlugin
 //                    {
 //                        player.Op = true;
 //                    }
-                    if (entry.Value.Operator)
+                    if (entry.Operator)
                         player.Op = true;
 
                     player.SetAuthentication(name, this.Name);
@@ -508,13 +514,13 @@ namespace RestrictPlugin
                 var hash = Hash(name, password);
 
 //                if (hash == split[0])
-                if (hash == pw.Value.Password)
+                if (hash == pw.Password)
                 {
                     sender.SendMessage("<Restrict> Already registered.");
                     return;
                 }
 
-                bool op = pw.Value.Operator;
+                bool op = pw.Operator;
 //                if (split.Length > 1 && split[1] == "op")
 //                    op = true;
                 //hash = hash + ":op";
@@ -522,7 +528,8 @@ namespace RestrictPlugin
                 #if LEGACY
                 users.Update(oname, null, op);
                 #endif
-                users.Update(pname, hash, op);
+//                users.Update(pname, hash, op);
+                users.Update(name, hash, op);
                 users.Save();
 
                 sender.SendMessage("<Restrict> Your new password is: " + password);
@@ -566,7 +573,8 @@ namespace RestrictPlugin
             var pname = NameTransform(rq.name);
             var hash = Hash(rq.name, rq.password);
 
-            users.Update(pname, hash, false);
+            //            users.Update(pname, hash, false);
+            users.Update(rq.name, hash, false);
             users.Save();
 
             var player = Tools.GetPlayerByName(rq.name);
