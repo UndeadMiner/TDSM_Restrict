@@ -263,7 +263,7 @@ namespace RestrictPlugin
             #if LEGACY
             var oname = OldNameTransform(name);
             #endif
-            UserDetails entry = null;
+            UserDetails? entry = null;
 
             lock (users)
             {
@@ -316,7 +316,7 @@ namespace RestrictPlugin
             #if LEGACY
             var oname = OldNameTransform(name);
             #endif
-            UserDetails entry = null;
+            UserDetails? entry = null;
 
             String.Format("User: {0}, Pass: {1}, pname: {2}, player.name: {3}", name, args.Password, pname, player.name);
 
@@ -348,7 +348,7 @@ namespace RestrictPlugin
 
 //            var split = entry.Split(':');
 //            var hash = split[0];
-            var hash = entry.Password;
+            var hash = entry.Value.Password;
             var hash2 = Hash(name, args.Password);
 
             String.Format("User: {0}, Pass: {1}, Hash: {3}, Hash2: {2}", name, args.Password, hash2, hash);
@@ -359,7 +359,7 @@ namespace RestrictPlugin
                 return;
             }
 
-            if (entry.Operator)
+            if (entry.Value.Operator)
                 player.Op = true;
             
 //            if (split.Length > 1 && split[1] == "op")

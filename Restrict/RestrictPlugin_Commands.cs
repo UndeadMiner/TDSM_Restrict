@@ -65,7 +65,7 @@ namespace RestrictPlugin
                     #if LEGACY
                     var old = users.Find(pname) ?? users.Find(oname);
                     #else
-                    var old = users.Find(pname);
+                    var old = users.Find(name);
                     #endif
 
                     var val = hash;
@@ -121,7 +121,7 @@ namespace RestrictPlugin
 
 //                    var split = entry.Split(':');
 //                    var oldop = split.Length > 1 && split[1] == "op";
-                    var oldop = entry.Operator;
+                    var oldop = entry.Value.Operator;
 
                     if (player != null)
                     {
@@ -138,7 +138,7 @@ namespace RestrictPlugin
                     if (oldop != op)
                     {
 //                        var val = split[0];
-                        var val = entry.Password;
+                        var val = entry.Value.Password;
                         //if (op) val += ":op";
 
                         #if LEGACY
@@ -403,7 +403,7 @@ namespace RestrictPlugin
                 #if LEGACY
                 var oname = OldNameTransform(name);
                 #endif
-                UserDetails entry = null;
+                UserDetails? entry = null;
 
                 lock (users)
                 {
@@ -418,7 +418,7 @@ namespace RestrictPlugin
                 {
 //                    var split = entry.Split(':');
 //                    var hash = split[0];
-                    var hash = entry.Password;
+                    var hash = entry.Value.Password;
                     var hash2 = Hash(name, password);
 
                     if (hash != hash2)
@@ -431,7 +431,7 @@ namespace RestrictPlugin
 //                    {
 //                        player.Op = true;
 //                    }
-                    if (entry.Operator)
+                    if (entry.Value.Operator)
                         player.Op = true;
 
                     player.SetAuthentication(name, this.Name);
@@ -514,13 +514,13 @@ namespace RestrictPlugin
                 var hash = Hash(name, password);
 
 //                if (hash == split[0])
-                if (hash == pw.Password)
+                if (hash == pw.Value.Password)
                 {
                     sender.SendMessage("<Restrict> Already registered.");
                     return;
                 }
 
-                bool op = pw.Operator;
+                bool op = pw.Value.Operator;
 //                if (split.Length > 1 && split[1] == "op")
 //                    op = true;
                 //hash = hash + ":op";
