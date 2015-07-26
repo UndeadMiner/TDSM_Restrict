@@ -64,6 +64,26 @@ namespace RestrictPlugin
             get { return properties.GetValue("enable-default-password", false); }
         }
 
+        string message1
+        {
+            get { return properties.GetValue("altermessage", "Type \"/reg password\" to request registration."); }
+        }
+
+        string guestmessage
+        {
+            get { return properties.GetValue("guestmessage", "You are a guest, to register type: /reg yourpassword"); }
+        }
+
+        string regmessage
+        {
+            get { return properties.GetValue("regmessage", "Welcome back, registered user."); }
+        }
+
+        string opmessage
+        {
+            get { return properties.GetValue("opmessage", "This humble server welcomes back Their Operating Highness."); }
+        }
+
         public const String ChestBreak = "restrict.chestbreak";
         public const String ChestOpen = "restrict.chestopen";
         public const String DoorChange = "restrict.doorchange";
@@ -103,6 +123,10 @@ namespace RestrictPlugin
             var dummy5 = restrictGuestsNPCs;
             var dummy6 = enableDefaultPassword;
             var dummy7 = verbose;
+            var dummy8 = message1;
+            var dummy9 = guestmessage;
+            var dummy10 = regmessage;
+            var dummy11 = opmessage;
             properties.Save();
 
             AddCommand("ru")
@@ -380,7 +404,7 @@ namespace RestrictPlugin
             ctx.SetResult(HookResult.DEFAULT);
         }
 
-        [Hook(HookOrder.TERMINAL)]
+        [Hook(HookOrder.TERMINAL)] //might need to be HookOrder.NORMAL to work. (untested)
         void OnJoin(ref HookContext ctx, ref HookArgs.PlayerEnteredGame args)
         {
             var player = ctx.Player;
@@ -389,11 +413,11 @@ namespace RestrictPlugin
                 return;
 
             if (player.AuthenticatedAs == null)
-                player.Message(255, "You are a guest, to register type: /reg yourpassword");
+                player.Message(255, guestmessage);
             else if (player.Op)
-                player.Message(255, new Color(128, 128, 255), "This humble server welcomes back Their Operating Highness.");
+                player.Message(255, new Color(128, 128, 255), opmessage);
             else
-                player.Message(255, new Color(128, 255, 128), "Welcome back, registered user.");
+                player.Message(255, new Color(128, 255, 128), regmessage);
 
             return;
         }
@@ -428,7 +452,7 @@ namespace RestrictPlugin
             {
                 ctx.SetResult(HookResult.IGNORE);
                 player.SendTimed("<Restrict> You are not allowed to edit signs as a guest.");
-                player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+                player.SendTimed("<Restrict> " + message1);
             }
             else if (IsRestrictedForUser(ctx.Player, SignEdit))
             {
@@ -458,7 +482,7 @@ namespace RestrictPlugin
             //{
             //    ctx.SetResult(HookResult.RECTIFY);
             //    player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
-            //    player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+            //    player.SendTimed("<Restrict> " + message1);
             //}
             //else if (IsRestrictedForUser(ctx.Player, WorldAlter))
             //{
@@ -472,7 +496,7 @@ namespace RestrictPlugin
                 if (player.AuthenticatedAs == null)
                 {
                     player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
-                    player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+                    player.SendTimed("<Restrict> " + message1);
                 }
                 else
                 {
@@ -498,7 +522,7 @@ namespace RestrictPlugin
                 if (player.AuthenticatedAs == null)
                 {
                     player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
-                    player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+                    player.SendTimed("<Restrict> " + message1);
                 }
                 else
                 {
@@ -526,7 +550,7 @@ namespace RestrictPlugin
             {
                 ctx.SetResult(HookResult.RECTIFY);
                 player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
-                player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+                player.SendTimed("<Restrict> " + message1);
             }
             else if (IsRestrictedForUser(ctx.Player, ChestBreak))
             {
@@ -554,7 +578,7 @@ namespace RestrictPlugin
             {
                 ctx.SetResult(HookResult.IGNORE);
                 player.SendTimed("<Restrict> You are not allowed to open chests as a guest.");
-                player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+                player.SendTimed("<Restrict> " + message1);
             }
             else if (IsRestrictedForUser(ctx.Player, ChestOpen))
             {
@@ -582,7 +606,7 @@ namespace RestrictPlugin
             {
                 ctx.SetResult(HookResult.RECTIFY);
                 player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
-                player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+                player.SendTimed("<Restrict> " + message1);
             }
             else if (IsRestrictedForUser(ctx.Player, LiquidFlow))
             {
@@ -647,7 +671,7 @@ namespace RestrictPlugin
                         if (player.AuthenticatedAs == null)
                         {
                             player.SendTimed("<Restrict> You are not allowed to use this projectile as a guest.");
-                            player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+                            player.SendTimed("<Restrict> " + message1);
                         }
                         else if (IsRestrictedForUser(ctx.Player, ProjectileUse))
                             player.SendTimed("<Restrict> You are not allowed to use this projectile without permissions.");
@@ -678,7 +702,7 @@ namespace RestrictPlugin
             {
                 ctx.SetResult(HookResult.RECTIFY);
                 player.SendTimed("<Restrict> You are not allowed to open and close doors as a guest.");
-                player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+                player.SendTimed("<Restrict> " + message1);
             }
             else if (IsRestrictedForUser(ctx.Player, DoorChange))
             {
@@ -702,7 +726,7 @@ namespace RestrictPlugin
             {
                 ctx.SetResult(HookResult.IGNORE);
                 player.SendTimed("<Restrict> You are not allowed to hurt NPCs as a guest.");
-                player.SendTimed("<Restrict> Type \"/reg password\" to request registration.");
+                player.SendTimed("<Restrict> " + message1);
             }
             else if (IsRestrictedForUser(ctx.Player, NpcHurt))
             {
