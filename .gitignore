@@ -4,3 +4,5 @@
 Restrict/bin
 
 Restrict/obj/*
+.vs/*
+*.suo
