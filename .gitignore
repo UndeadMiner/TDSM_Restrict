@@ -3,3 +3,4 @@
 *.pidb
 Restrict/bin
 
+Restrict/obj/*
