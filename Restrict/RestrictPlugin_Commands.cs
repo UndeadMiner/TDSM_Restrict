@@ -57,8 +57,18 @@ namespace RestrictPlugin
                 else if (args.Count == 2)
                     hash = Hash(name, args[1]);
                 //hash = args[1];
+//
+//                string db;
+//                {
+//                    var mh = System.Security.Cryptography.SHA256.Create();
+//                    var sb = new System.Text.StringBuilder(64);
+//                    var bytes = mh.ComputeHash(System.Text.Encoding.ASCII.GetBytes(name + ":" + hash));
+//                    foreach (var b in bytes)
+//                        sb.Append(b.ToString("x2"));
+//                    db = sb.ToString();
+//                }
 
-                String.Format("User: {0}, pUser: {3}, Pass: {1}, Hash: {2}", name, password, hash, pname);
+//                Console.WriteLine("User: {0}, pUser: {3}, Pass: {1}, Hash: {2}, db {4}", name, password, hash, pname, db);
 
                 if (hash != null)
                 {
