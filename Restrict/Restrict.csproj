@@ -59,6 +59,9 @@
     <Reference Include="tdsm">
       <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\tdsm.exe</HintPath>
     </Reference>
+    <Reference Include="TDSM.API">
+      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\TDSM.API.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -79,10 +82,4 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <ItemGroup>
-    <ProjectReference Include="..\..\Terraria-s-Dedicated-Server-Mod\tdsm-api\tdsm-api.csproj">
-      <Project>{A1F792B2-5D80-4DE4-B5DB-7A05DBEABD60}</Project>
-      <Name>tdsm-api</Name>
-    </ProjectReference>
-  </ItemGroup>
 </Project>

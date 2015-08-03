@@ -364,17 +364,17 @@ namespace RestrictPlugin
 			var hash = entry.Value.Password;
 			var hash2 = Hash (name, args.Password);
 
-			string db;
-			{
-				var mh = System.Security.Cryptography.SHA256.Create();
-				var sb = new System.Text.StringBuilder(64);
-				var bytes = mh.ComputeHash(System.Text.Encoding.ASCII.GetBytes(name + ":" + hash2));
-				foreach (var b in bytes)
-					sb.Append(b.ToString("x2"));
-				db = sb.ToString();
-			}
-
-			Console.WriteLine ("User: {0}, Pass: {1}, Hash: {3}, Hash2: {2}, UN: {4}, db: {5}", name, args.Password, hash2, hash, entry.Value.Username, db);
+//			string db;
+//			{
+//				var mh = System.Security.Cryptography.SHA256.Create();
+//				var sb = new System.Text.StringBuilder(64);
+//				var bytes = mh.ComputeHash(System.Text.Encoding.ASCII.GetBytes(name + ":" + hash2));
+//				foreach (var b in bytes)
+//					sb.Append(b.ToString("x2"));
+//				db = sb.ToString();
+//			}
+//
+//			Console.WriteLine ("User: {0}, Pass: {1}, Hash: {3}, Hash2: {2}, UN: {4}, db: {5}", name, args.Password, hash2, hash, entry.Value.Username, db);
 
 //            if (hash != hash2)
 			if (!entry.Value.ComparePassword (entry.Value.Username, hash2))
