@@ -79,6 +79,7 @@ namespace RestrictPlugin
 
         public UserDetails? Find(string username)
         {
+            ProgramLog.Plugin.Log("Restrict looking for: {0},{1}", username, Storage.IsAvailable);
             if (Storage.IsAvailable)
             {
                 return AuthenticatedUsers.GetUser(username);
