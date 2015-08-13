@@ -56,11 +56,11 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="tdsm">
-      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\tdsm.exe</HintPath>
-    </Reference>
     <Reference Include="TDSM.API">
       <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\TDSM.API.dll</HintPath>
+    </Reference>
+    <Reference Include="tdsm">
+      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Binaries\tdsm.exe</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
