@@ -46,7 +46,7 @@ namespace RestrictPlugin
                 else
                     name = player.Name;
 
-                var pname = NameTransform(name);
+//                var pname = NameTransform(name);
                 #if LEGACY
                 var oname = OldNameTransform(name);
                 #endif
@@ -120,7 +120,7 @@ namespace RestrictPlugin
                     #if LEGACY
                     var entry = users.Find(pname) ?? users.Find(oname);
                     #else
-                    var entry = users.Find(pname);
+					var entry = users.Find(name);
                     #endif
 
                     if (entry == null)
@@ -214,7 +214,7 @@ namespace RestrictPlugin
                         player.SendMessage("<Restrict> Your registration has been revoked.");
                 }
 
-                var pname = NameTransform(name);
+//                var pname = NameTransform(name);
                 #if LEGACY
                 var oname = OldNameTransform(name);
 
@@ -409,7 +409,7 @@ namespace RestrictPlugin
             if (player.AuthenticatedAs == null)
             {
                 var name = player.Name;
-                var pname = NameTransform(name);
+//                var pname = NameTransform(name);
                 #if LEGACY
                 var oname = OldNameTransform(name);
                 #endif
@@ -420,7 +420,7 @@ namespace RestrictPlugin
                     #if LEGACY
                     entry = users.Find(pname) ?? users.Find(oname);
                     #else
-                    entry = users.Find(pname);
+					entry = users.Find(name);
                     #endif
                 }
 
@@ -513,13 +513,13 @@ namespace RestrictPlugin
 
             if (player.AuthenticatedAs != null)
             {
-                var pname = NameTransform(name);
+//                var pname = NameTransform(name);
                 #if LEGACY
                 var oname = OldNameTransform(name);
                 var split = (users.Find(pname) ?? users.Find(oname)).Split(':');
                 #else
 //                var split = (users.Find(pname)).Split(':');
-                var pw = users.Find(pname);
+				var pw = users.Find(name);
                 #endif
                 var hash = Hash(name, password);
 
@@ -580,7 +580,7 @@ namespace RestrictPlugin
         {
             requests.Remove(num);
 
-            var pname = NameTransform(rq.name);
+//            var pname = NameTransform(rq.name);
             var hash = Hash(rq.name, rq.password);
 
             //            users.Update(pname, hash, false);

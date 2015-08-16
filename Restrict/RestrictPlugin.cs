@@ -242,7 +242,9 @@ namespace RestrictPlugin
 			{
 				//Data connectors must have loaded by now
 
-				users = new UserDB ();
+				users = new UserDB () {
+					CaseSensitive = false	
+				};
 				users.Initialise ();
 			}
 		}
@@ -272,7 +274,7 @@ namespace RestrictPlugin
 			}
 
 			var name = args.Name;
-			var pname = NameTransform (name);
+//			var pname = NameTransform (name);
 			#if LEGACY
             var oname = OldNameTransform(name);
 			#endif
@@ -283,7 +285,7 @@ namespace RestrictPlugin
 				#if LEGACY
                 entry = users.Find(pname) ?? users.Find(oname);
 				#else
-				entry = users.Find (pname);
+				entry = users.Find (name);
 				#endif
 			}
 
@@ -325,20 +327,20 @@ namespace RestrictPlugin
 			}
 
 			var name = player.Name;
-			var pname = NameTransform (name);
+//			var pname = NameTransform (name);
 			#if LEGACY
             var oname = OldNameTransform(name);
 			#endif
 			UserDetails? entry = null;
 
-			String.Format ("User: {0}, Pass: {1}, pname: {2}, player.name: {3}", name, args.Password, pname, player.name);
+//			String.Format ("User: {0}, Pass: {1}, pname: {2}, player.name: {3}", name, args.Password, pname, player.name);
 
 			lock (users)
 			{
 				#if LEGACY
                 entry = users.Find(pname) ?? users.Find(oname);
 				#else
-				entry = users.Find (pname);
+				entry = users.Find (name);
 				#endif
 			}
 
@@ -377,7 +379,11 @@ namespace RestrictPlugin
 //			Console.WriteLine ("User: {0}, Pass: {1}, Hash: {3}, Hash2: {2}, UN: {4}, db: {5}", name, args.Password, hash2, hash, entry.Value.Username, db);
 
 //            if (hash != hash2)
-			if (!entry.Value.ComparePassword (entry.Value.Username, hash2))
+
+//			ProgramLog.Log ("pw: {0}, hash2: {1}", entry.Value.Password, hash2);
+			if ((Storage.IsAvailable && !entry.Value.ComparePassword (entry.Value.Username, hash2))
+			    ||
+			    (!Storage.IsAvailable && entry.Value.Password != hash2))
 			{
 				ctx.SetKick ("Incorrect password for user: " + name);
 				return;

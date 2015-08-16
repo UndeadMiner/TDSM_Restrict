@@ -38,14 +38,14 @@ namespace RestrictPlugin
         //    return null;
         //}
 
-        static string NameTransform(string name)
-        {
-            #if LEGACY
-            return name.ToLower().Replace("=", "_EQUAL_");
-            #else
-            return name.ToLower();
-            #endif
-        }
+//        static string NameTransform(string name)
+//        {
+//            #if LEGACY
+//            return name.ToLower().Replace("=", "_EQUAL_");
+//            #else
+//            return name.ToLower();
+//            #endif
+//        }
 
         #if LEGACY
         static string OldNameTransform(string name)
