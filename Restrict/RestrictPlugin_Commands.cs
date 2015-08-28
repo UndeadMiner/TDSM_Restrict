@@ -3,11 +3,11 @@ using NDesk.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TDSM.API;
-using TDSM.API.Command;
+using OTA;
+using OTA.Command;
 using Terraria;
-using TDSM.API.Logging;
-using TDSM.API.Data;
+using OTA.Logging;
+using OTA.Data;
 
 namespace RestrictPlugin
 {

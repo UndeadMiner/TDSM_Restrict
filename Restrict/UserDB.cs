@@ -1,10 +1,10 @@
 ﻿//#define API_Storage
 using System;
-using TDSM.API;
+using OTA;
 using System.IO;
-using TDSM.API.Misc;
-using TDSM.API.Data;
-using TDSM.API.Logging;
+using OTA.Misc;
+using OTA.Data;
+using OTA.Logging;
 
 namespace RestrictPlugin
 {

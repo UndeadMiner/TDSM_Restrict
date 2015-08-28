@@ -3,14 +3,14 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using TDSM.API;
-using TDSM.API.Command;
-using TDSM.API.Misc;
-using TDSM.API.Plugin;
+using OTA;
+using OTA.Command;
+using OTA.Misc;
+using OTA.Plugin;
 
 //using TDSM.Core.ServerCore;
-using TDSM.API.Logging;
-using TDSM.API.Data;
+using OTA.Logging;
+using OTA.Data;
 
 namespace RestrictPlugin
 {
@@ -238,7 +238,7 @@ namespace RestrictPlugin
 		[Hook]
 		void OnStateChange (ref HookContext ctx, ref HookArgs.ServerStateChange args)
 		{
-			if (args.ServerChangeState == TDSM.API.ServerState.Initialising)
+			if (args.ServerChangeState == OTA.ServerState.Initialising)
 			{
 				//Data connectors must have loaded by now
 
@@ -746,37 +746,37 @@ namespace RestrictPlugin
 		public bool IsRestrictedForUser (BasePlayer player, string node)
 		{
 			#if LEGACY
-            if (!player.Op && TDSM.API.Permissions.PermissionsManager.IsSet)
+            if (!player.Op && OTA.Permissions.PermissionsManager.IsSet)
             {
                 var isRegistered = player.AuthenticatedAs != null;
                 if (isRegistered)
                 {
-                    var user = TDSM.API.Permissions.PermissionsManager.IsPermitted(node, player);
-                    var grp = TDSM.API.Permissions.PermissionsManager.IsPermittedForGroup(node, (attributes) =>
+                    var user = OTA.Permissions.PermissionsManager.IsPermitted(node, player);
+                    var grp = OTA.Permissions.PermissionsManager.IsPermittedForGroup(node, (attributes) =>
                         {
                             return attributes.ContainsKey("ApplyToRegistered") && attributes["ApplyToRegistered"].ToLower() == "true";
                         });
 
-                    if (user == TDSM.API.Permissions.Permission.Denied)
+                    if (user == OTA.Permissions.Permission.Denied)
                         return true;
-                    else if (user == TDSM.API.Permissions.Permission.Permitted)
+                    else if (user == OTA.Permissions.Permission.Permitted)
                         return false;
 
-                    return grp != TDSM.API.Permissions.Permission.Permitted;
+                    return grp != OTA.Permissions.Permission.Permitted;
                 }
                 else
                 {
-                    var grp = TDSM.API.Permissions.PermissionsManager.IsPermittedForGroup(node, (attributes) =>
+                    var grp = OTA.Permissions.PermissionsManager.IsPermittedForGroup(node, (attributes) =>
                         {
                             return attributes.ContainsKey("ApplyToGuests") && attributes["ApplyToGuests"].ToLower() == "true";
                         });
 
-                    return grp != TDSM.API.Permissions.Permission.Permitted;
+                    return grp != OTA.Permissions.Permission.Permitted;
                 }
             }
 			#else
-			if (!player.Op && TDSM.API.Data.Storage.IsAvailable)
-				return TDSM.API.Data.Storage.IsPermitted (node, player) != TDSM.API.Data.Permission.Permitted;
+			if (!player.Op && OTA.Data.Storage.IsAvailable)
+				return OTA.Data.Storage.IsPermitted (node, player) != OTA.Data.Permission.Permitted;
 			#endif
 
 			return !player.Op;
