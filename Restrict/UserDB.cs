@@ -77,7 +77,7 @@ namespace RestrictPlugin
 			}
 		}
 
-		public UserDetails? Find (string username)
+		public DbPlayer Find (string username)
 		{
 			if (Storage.IsAvailable)
 			{
@@ -102,7 +102,7 @@ namespace RestrictPlugin
 //						ProgramLog.Log ("first {0}", sp[0]);
 //					}
 
-					return new UserDetails () {
+					return new DbPlayer () {
 						Password = sp.Length == 1 ? pw : sp [0],
 						Operator = sp.Length == 1 ? false : sp [1] == "op",
 						Username = username

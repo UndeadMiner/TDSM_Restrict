@@ -278,7 +278,7 @@ namespace RestrictPlugin
 			#if LEGACY
             var oname = OldNameTransform(name);
 			#endif
-			UserDetails? entry = null;
+			DbPlayer entry = null;
 
 			lock (users)
 			{
@@ -331,7 +331,7 @@ namespace RestrictPlugin
 			#if LEGACY
             var oname = OldNameTransform(name);
 			#endif
-			UserDetails? entry = null;
+			DbPlayer entry = null;
 
 //			String.Format ("User: {0}, Pass: {1}, pname: {2}, player.name: {3}", name, args.Password, pname, player.name);
 
@@ -363,7 +363,7 @@ namespace RestrictPlugin
 
 //            var split = entry.Split(':');
 //            var hash = split[0];
-			var hash = entry.Value.Password;
+			var hash = entry.Password;
 			var hash2 = Hash (name, args.Password);
 
 //			string db;
@@ -376,20 +376,20 @@ namespace RestrictPlugin
 //				db = sb.ToString();
 //			}
 //
-//			Console.WriteLine ("User: {0}, Pass: {1}, Hash: {3}, Hash2: {2}, UN: {4}, db: {5}", name, args.Password, hash2, hash, entry.Value.Username, db);
+//			Console.WriteLine ("User: {0}, Pass: {1}, Hash: {3}, Hash2: {2}, UN: {4}, db: {5}", name, args.Password, hash2, hash, entry.Username, db);
 
 //            if (hash != hash2)
 
-//			ProgramLog.Log ("pw: {0}, hash2: {1}", entry.Value.Password, hash2);
-			if ((Storage.IsAvailable && !entry.Value.ComparePassword (entry.Value.Username, hash2))
+//			ProgramLog.Log ("pw: {0}, hash2: {1}", entry.Password, hash2);
+			if ((Storage.IsAvailable && !entry.ComparePassword (entry.Username, hash2))
 			    ||
-			    (!Storage.IsAvailable && entry.Value.Password != hash2))
+			    (!Storage.IsAvailable && entry.Password != hash2))
 			{
 				ctx.SetKick ("Incorrect password for user: " + name);
 				return;
 			}
 
-			if (entry.Value.Operator)
+			if (entry.Operator)
 				player.Op = true;
             
 //            if (split.Length > 1 && split[1] == "op")

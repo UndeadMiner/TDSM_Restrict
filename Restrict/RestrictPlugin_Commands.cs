@@ -131,7 +131,7 @@ namespace RestrictPlugin
 
 //                    var split = entry.Split(':');
 //                    var oldop = split.Length > 1 && split[1] == "op";
-                    var oldop = entry.Value.Operator;
+                    var oldop = entry.Operator;
 
                     if (player != null)
                     {
@@ -148,7 +148,7 @@ namespace RestrictPlugin
                     if (oldop != op)
                     {
 //                        var val = split[0];
-                        var val = entry.Value.Password;
+                        var val = entry.Password;
                         //if (op) val += ":op";
 
                         #if LEGACY
@@ -413,7 +413,7 @@ namespace RestrictPlugin
                 #if LEGACY
                 var oname = OldNameTransform(name);
                 #endif
-                UserDetails? entry = null;
+                DbPlayer entry = null;
 
                 lock (users)
                 {
@@ -428,7 +428,7 @@ namespace RestrictPlugin
                 {
 //                    var split = entry.Split(':');
 //                    var hash = split[0];
-                    var hash = entry.Value.Password;
+                    var hash = entry.Password;
                     var hash2 = Hash(name, password);
 
                     if (hash != hash2)
@@ -441,7 +441,7 @@ namespace RestrictPlugin
 //                    {
 //                        player.Op = true;
 //                    }
-                    if (entry.Value.Operator)
+                    if (entry.Operator)
                         player.Op = true;
 
                     player.SetAuthentication(name, this.Name);
@@ -524,13 +524,13 @@ namespace RestrictPlugin
                 var hash = Hash(name, password);
 
 //                if (hash == split[0])
-                if (hash == pw.Value.Password)
+                if (hash == pw.Password)
                 {
                     sender.SendMessage("<Restrict> Already registered.");
                     return;
                 }
 
-                bool op = pw.Value.Operator;
+                bool op = pw.Operator;
 //                if (split.Length > 1 && split[1] == "op")
 //                    op = true;
                 //hash = hash + ":op";
