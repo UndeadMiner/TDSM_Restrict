@@ -51,7 +51,7 @@ namespace RestrictPlugin
 				}
 				else
 				{
-					return AuthenticatedUsers.CreateUser (username, password, op);
+					return AuthenticatedUsers.CreateUser (username, password, op) != null;
 				}
 			}
 			else
@@ -105,7 +105,7 @@ namespace RestrictPlugin
 					return new DbPlayer () {
 						Password = sp.Length == 1 ? pw : sp [0],
 						Operator = sp.Length == 1 ? false : sp [1] == "op",
-						Username = username
+						Name = username
 					};
 				}
 

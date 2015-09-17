@@ -381,7 +381,7 @@ namespace RestrictPlugin
 //            if (hash != hash2)
 
 //			ProgramLog.Log ("pw: {0}, hash2: {1}", entry.Password, hash2);
-			if ((Storage.IsAvailable && !entry.ComparePassword (entry.Username, hash2))
+			if ((Storage.IsAvailable && !entry.ComparePassword (entry.Name, hash2))
 			    ||
 			    (!Storage.IsAvailable && entry.Password != hash2))
 			{
