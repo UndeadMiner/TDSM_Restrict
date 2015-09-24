@@ -381,9 +381,25 @@ namespace RestrictPlugin
 //            if (hash != hash2)
 
 //			ProgramLog.Log ("pw: {0}, hash2: {1}", entry.Password, hash2);
-			if ((Storage.IsAvailable && !entry.ComparePassword (entry.Name, hash2))
-			    ||
-			    (!Storage.IsAvailable && entry.Password != hash2))
+//			if ((Storage.IsAvailable && !entry.ComparePassword (entry.Name, entry.Password))
+//			    ||
+//			    (!Storage.IsAvailable && entry.Password != hash2))
+//			{
+//				ctx.SetKick ("Incorrect password for user: " + name);
+//				return;
+//			}
+
+			var authenticated = false;
+			if (Storage.IsAvailable)
+			{
+				authenticated = entry.ComparePassword (entry.Name, args.Password);
+			}
+			else
+			{
+				authenticated = entry.Password == hash2;
+			}
+
+			if (!authenticated)
 			{
 				ctx.SetKick ("Incorrect password for user: " + name);
 				return;
