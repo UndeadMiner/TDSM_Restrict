@@ -11,52 +11,51 @@ using OTA.Data;
 
 namespace RestrictPlugin
 {
-    public partial class RestrictPlugin
-    {
-        void RegisterCommand(ISender sender, ArgumentList argz)
-        {
-            try
-            {
-                var op = false;
-                var force = false;
-                string password = null;
-                var options = new OptionSet()
-                {
-                    { "o|op", v => op = true },
-                    { "f|force", v => force = true },
-                    { "p|password=", v => password = v },
-                };
+	public partial class RestrictPlugin
+	{
+		void RegisterCommand (ISender sender, ArgumentList argz)
+		{
+			try
+			{
+				var op = false;
+				var force = false;
+				string password = null;
+				var options = new OptionSet () {
+					{ "o|op", v => op = true },
+					{ "f|force", v => force = true },
+					{ "p|password=", v => password = v },
+				};
 
-                var args = options.Parse(argz);
+				var args = options.Parse (argz);
 
-                if (args.Count == 0 || args.Count > 2)
-                    throw new CommandError("");
+				if (args.Count == 0 || args.Count > 2)
+					throw new CommandError ("");
 
-                var name = args[0];
-                var player = Tools.GetPlayerByName(name);
+				var name = args [0];
+				var player = Tools.GetPlayerByName (name);
 
-                if (player == null)
-                {
-                    if (!force)
-                    {
-                        sender.SendMessage("restrict.ru: Player not found online, use -f to assume name is correct.");
-                        return;
-                    }
-                }
-                else
-                    name = player.Name;
+				if (player == null)
+				{
+					if (!force)
+					{
+						sender.SendMessage ("restrict.ru: Player not found online, use -f to assume name is correct.");
+						return;
+					}
+				}
+				else
+					name = player.Name;
 
 //                var pname = NameTransform(name);
-                #if LEGACY
+				#if LEGACY
                 var oname = OldNameTransform(name);
-                #endif
+				#endif
 
-                string hash = null;
-                if (password != null)
-                    hash = Hash(name, password);
-                else if (args.Count == 2)
-                    hash = Hash(name, args[1]);
-                //hash = args[1];
+				string hash = null;
+				if (password != null)
+					hash = Hash (name, password);
+				else if (args.Count == 2)
+					hash = Hash (name, args [1]);
+				//hash = args[1];
 //
 //                string db;
 //                {
@@ -70,191 +69,189 @@ namespace RestrictPlugin
 
 //                Console.WriteLine("User: {0}, pUser: {3}, Pass: {1}, Hash: {2}, db {4}", name, password, hash, pname, db);
 
-                if (hash != null)
-                {
-                    #if LEGACY
+				if (hash != null)
+				{
+					#if LEGACY
                     var old = users.Find(pname) ?? users.Find(oname);
-                    #else
-                    var old = users.Find(name);
-                    #endif
+					#else
+					var old = users.Find (name);
+					#endif
 
-                    var val = hash;
-                    //if (op) val += ":op";
+					var val = hash;
+					//if (op) val += ":op";
 
-                    #if LEGACY
-                    users.Update(oname, null, op);
-                    #endif
-                    //                    users.Update(pname, val, op);
-                    users.Update(name, val, op);
-                    users.Save();
+					#if LEGACY
+					users.Update(oname, null, op);
+					users.Update(name, val, op);
+					#else
+					users.Update (name, password, op);
+					#endif
+					//                    users.Update(pname, val, op);
+					users.Save ();
 
-                    if (player != null)
-                    {
-                        player.SetAuthentication(name, this.Name);
+					if (player != null)
+					{
+						player.SetAuthentication (name, this.Name);
 
-                        if (player != sender)
-                        {
-                            if (op)
-                                player.SendMessage("<Restrict> You have been registered as an operator.");
-                            else
-                                player.SendMessage("<Restrict> You have been registered.");
-                        }
-                        player.Op = op;
-                    }
+						if (player != sender)
+						{
+							if (op)
+								player.SendMessage ("<Restrict> You have been registered as an operator.");
+							else
+								player.SendMessage ("<Restrict> You have been registered.");
+						}
+						player.Op = op;
+					}
 
-                    if (old != null)
-                        sender.SendMessage("restrict.ru: Changed password for: " + name);
-                    else if (op)
-                    {
-                        sender.SendMessage("restrict.ru: Registered operator: " + name);
-                        ProgramLog.Admin.Log("<Restrict> Manually registered new operator: " + name);
-                    }
-                    else
-                    {
-                        sender.SendMessage("restrict.ru: Registered user: " + name);
-                        ProgramLog.Admin.Log("<Restrict> Manually registered new user: " + name);
-                    }
-                }
-                else if (args.Count == 1)
-                {
-                    #if LEGACY
+					if (old != null)
+						sender.SendMessage ("restrict.ru: Changed password for: " + name);
+					else if (op)
+					{
+						sender.SendMessage ("restrict.ru: Registered operator: " + name);
+						ProgramLog.Admin.Log ("<Restrict> Manually registered new operator: " + name);
+					}
+					else
+					{
+						sender.SendMessage ("restrict.ru: Registered user: " + name);
+						ProgramLog.Admin.Log ("<Restrict> Manually registered new user: " + name);
+					}
+				}
+				else if (args.Count == 1)
+				{
+					#if LEGACY
                     var entry = users.Find(pname) ?? users.Find(oname);
-                    #else
-					var entry = users.Find(name);
-                    #endif
+					#else
+					var entry = users.Find (name);
+					#endif
 
-                    if (entry == null)
-                    {
-                        sender.SendMessage("restrict.ru: No such user in database: " + name);
-                        return;
-                    }
+					if (entry == null)
+					{
+						sender.SendMessage ("restrict.ru: No such user in database: " + name);
+						return;
+					}
 
 //                    var split = entry.Split(':');
 //                    var oldop = split.Length > 1 && split[1] == "op";
-                    var oldop = entry.Operator;
+					var oldop = entry.Operator;
 
-                    if (player != null)
-                    {
-                        player.Op = op;
-                        if (player != sender)
-                        {
-                            if (op && !oldop)
-                                player.SendMessage("<Restrict> You have been registered as an operator.");
-                            else if (oldop && !op)
-                                player.SendMessage("<Restrict> You have been unregistered as an operator.");
-                        }
-                    }
+					if (player != null)
+					{
+						player.Op = op;
+						if (player != sender)
+						{
+							if (op && !oldop)
+								player.SendMessage ("<Restrict> You have been registered as an operator.");
+							else if (oldop && !op)
+								player.SendMessage ("<Restrict> You have been unregistered as an operator.");
+						}
+					}
 
-                    if (oldop != op)
-                    {
+					if (oldop != op)
+					{
 //                        var val = split[0];
-                        var val = entry.Password;
-                        //if (op) val += ":op";
+						var val = entry.Password;
+						//if (op) val += ":op";
 
-                        #if LEGACY
+						#if LEGACY
                         users.Update(oname, null, op);
-                        #endif
+						#endif
 //                        users.Update(pname, val, op);
-                        users.Update(name, val, op);
-                        users.Save();
+						users.Update (name, val, op);
+						users.Save ();
 
-                        if (oldop && !op)
-                        {
-                            sender.SendMessage("restrict.ru: De-opped: " + name);
-                            ProgramLog.Admin.Log("<Restrict> De-opped: " + name);
-                        }
-                        else if (op && !oldop)
-                        {
-                            sender.SendMessage("restrict.ru: Opped: " + name);
-                            ProgramLog.Admin.Log("<Restrict> Opped: " + name);
-                        }
-                    }
-                }
-            }
-            catch (OptionException)
-            {
-                throw new CommandError("");
-            }
-        }
+						if (oldop && !op)
+						{
+							sender.SendMessage ("restrict.ru: De-opped: " + name);
+							ProgramLog.Admin.Log ("<Restrict> De-opped: " + name);
+						}
+						else if (op && !oldop)
+						{
+							sender.SendMessage ("restrict.ru: Opped: " + name);
+							ProgramLog.Admin.Log ("<Restrict> Opped: " + name);
+						}
+					}
+				}
+			}
+			catch (OptionException)
+			{
+				throw new CommandError ("");
+			}
+		}
 
-        void UnregisterCommand(ISender sender, ArgumentList argz)
-        {
-            try
-            {
-                var force = false;
-                var options = new OptionSet()
-                {
-                    { "f|force", v => force = true },
-                };
+		void UnregisterCommand (ISender sender, ArgumentList argz)
+		{
+			try
+			{
+				var force = false;
+				var options = new OptionSet () {
+					{ "f|force", v => force = true },
+				};
 
-                var args = options.Parse(argz);
+				var args = options.Parse (argz);
 
-                if (args.Count == 0 || args.Count > 1)
-                    throw new CommandError("");
+				if (args.Count == 0 || args.Count > 1)
+					throw new CommandError ("");
 
-                var name = args[0];
-                var player = Tools.GetPlayerByName(name);
+				var name = args [0];
+				var player = Tools.GetPlayerByName (name);
 
-                if (player == null)
-                {
-                    if (!force)
-                    {
-                        sender.SendMessage("restrict.ur: Player not found online, use -f to assume name is correct.");
-                        return;
-                    }
-                }
-                else
-                {
-                    name = player.Name;
-                    player.Op = false;
-                    //player.AuthenticatedAs = null;
-                    player.SetAuthentication(null, this.Name);
+				if (player == null)
+				{
+					if (!force)
+					{
+						sender.SendMessage ("restrict.ur: Player not found online, use -f to assume name is correct.");
+						return;
+					}
+				}
+				else
+				{
+					name = player.Name;
+					player.Op = false;
+					//player.AuthenticatedAs = null;
+					player.SetAuthentication (null, this.Name);
 
-                    if (player != sender)
-                        player.SendMessage("<Restrict> Your registration has been revoked.");
-                }
+					if (player != sender)
+						player.SendMessage ("<Restrict> Your registration has been revoked.");
+				}
 
 //                var pname = NameTransform(name);
-                #if LEGACY
+				#if LEGACY
                 var oname = OldNameTransform(name);
 
                 users.Update(oname, null, false);
-                #endif
+				#endif
 //                users.Update(pname, null, false);
-                users.Update(name, null, false);
-                users.Save();
+				users.Update (name, null, false);
+				users.Save ();
 
-                sender.SendMessage("restrict.ur: Unregistered user: " + name);
-            }
-            catch (OptionException)
-            {
-                throw new CommandError("");
-            }
-        }
+				sender.SendMessage ("restrict.ur: Unregistered user: " + name);
+			}
+			catch (OptionException)
+			{
+				throw new CommandError ("");
+			}
+		}
 
-        void OptionsCommand(ISender sender, ArgumentList argz)
-        {
-            try
-            {
-                var force = false;
-                var ag = allowGuests;
-                var rg = restrictGuests;
-                var rd = restrictGuestsDoors;
-                var si = serverId;
-                var changed = false;
-                var changed_si = false;
-                var reload = false;
+		void OptionsCommand (ISender sender, ArgumentList argz)
+		{
+			try
+			{
+				var force = false;
+				var ag = allowGuests;
+				var rg = restrictGuests;
+				var rd = restrictGuestsDoors;
+				var si = serverId;
+				var changed = false;
+				var changed_si = false;
+				var reload = false;
 
-                var options = new OptionSet()
-                {
-                    { "f|force", v => force = true },
-                    { "g|allow-guests=", (bool v) =>
-                        {
-                            ag = v;
-                            changed = true;
-                        }
-                    },
-                    { "r|restrict-guests=", (bool v) =>
+				var options = new OptionSet () {
+					{ "f|force", v => force = true }, { "g|allow-guests=", (bool v) =>
+						{
+							ag = v;
+							changed = true;
+						}
+					}, { "r|restrict-guests=", (bool v) =>
                         {
                             rg = v;
                             changed = true;
@@ -428,11 +425,12 @@ namespace RestrictPlugin
                 {
 //                    var split = entry.Split(':');
 //                    var hash = split[0];
-                    var hash = entry.Password;
-                    var hash2 = Hash(name, password);
+//                    var hash = entry.Password;
+//                    var hash2 = Hash(name, password);
 
-                    if (hash != hash2)
-                    {
+//                    if (hash != hash2)
+					if(!entry.ComparePassword(name, password))
+					{
                         sender.SendMessage("Authentication failed.", 255, 255, 180, 180);
                         return;
                     }
@@ -536,10 +534,12 @@ namespace RestrictPlugin
                 //hash = hash + ":op";
 
                 #if LEGACY
-                users.Update(oname, null, op);
+				users.Update(oname, null, op);
+				//                users.Update(pname, hash, op);
+				users.Update(name, hash, op);
+				#else
+				users.Update(name, password, op);
                 #endif
-//                users.Update(pname, hash, op);
-                users.Update(name, hash, op);
                 users.Save();
 
                 sender.SendMessage("<Restrict> Your new password is: " + password);
@@ -584,7 +584,8 @@ namespace RestrictPlugin
             var hash = Hash(rq.name, rq.password);
 
             //            users.Update(pname, hash, false);
-            users.Update(rq.name, hash, false);
+//			users.Update(rq.name, hash, false);
+			users.Update(rq.name, rq.password, false);
             users.Save();
 
             var player = Tools.GetPlayerByName(rq.name);
