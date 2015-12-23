@@ -11,9 +11,15 @@ using OTA.Plugin;
 //using TDSM.Core.ServerCore;
 using OTA.Logging;
 using OTA.Data;
+using TDSM.Core.Plugin.Hooks;
+using TDSM.Core.Data;
+using TDSM.Core;
+using TDSM.Core.Command;
+using TDSM.Core.Data.Permissions;
 
 namespace RestrictPlugin
 {
+	[OTAVersion (1, 0)]
 	public partial class RestrictPlugin : BasePlugin
 	{
 		class RegistrationRequest
@@ -88,7 +94,6 @@ namespace RestrictPlugin
 			Description = "Restrict access to the server or character names.";
 			Author = "UndeadMiner";
 			Version = "0.39.0";
-			TDSMBuild = 6;
 		}
 
 		protected override void Initialized (object state)
@@ -118,7 +123,7 @@ namespace RestrictPlugin
 			var dummy11 = opmessage;
 			properties.Save ();
 
-			AddCommand ("ru")
+			this.AddCommand ("ru")
                 .WithDescription ("Register users or change their accounts")
                 .SetOldHelpStyle ()
                 .WithHelpText ("Adding users or changing passwords:")
@@ -133,7 +138,7 @@ namespace RestrictPlugin
                 .WithPermissionNode ("restrict.ru")
                 .Calls (LockUsers<ISender, ArgumentList> (this.RegisterCommand));
 
-			AddCommand ("ur")
+			this.AddCommand ("ur")
                 .WithDescription ("Unregister users")
                 .SetOldHelpStyle ()
                 .WithHelpText ("Deleting users:")
@@ -143,7 +148,7 @@ namespace RestrictPlugin
                 .WithPermissionNode ("restrict.ur")
                 .Calls (LockUsers<ISender, ArgumentList> (this.UnregisterCommand));
 
-			AddCommand ("ro")
+			this.AddCommand ("ro")
                 .WithDescription ("Configure Restrict")
                 .SetOldHelpStyle ()
                 .WithHelpText ("Displaying options:")
@@ -159,7 +164,7 @@ namespace RestrictPlugin
                 .WithPermissionNode ("restrict.ro")
                 .Calls (LockUsers<ISender, ArgumentList> (this.OptionsCommand));
 
-			AddCommand ("rr")
+			this.AddCommand ("rr")
                 .WithDescription ("Manage registration requests")
                 .WithHelpText ("         list registration requests")
                 .WithHelpText ("-g #     grant a registration request")
@@ -169,21 +174,21 @@ namespace RestrictPlugin
                 .WithPermissionNode ("restrict.rr")
                 .Calls (LockUsers<ISender, ArgumentList> (this.RequestsCommand));
 
-			AddCommand ("pass")
+			this.AddCommand ("pass")
                 .WithDescription ("Change your password")
                 .WithAccessLevel (AccessLevel.PLAYER)
                 .WithHelpText ("yourpassword")
                 .WithPermissionNode ("restrict.pass")
                 .Calls (LockUsers<ISender, string> (this.PlayerPassCommand));
 
-			AddCommand ("reg")
+			this.AddCommand ("reg")
                 .WithDescription ("Submit a registration request")
                 .WithAccessLevel (AccessLevel.PLAYER)
                 .WithHelpText ("yourpassword")
                 .WithPermissionNode ("restrict.reg")
                 .Calls (LockUsers<ISender, string> (this.PlayerRegCommand));
 
-			AddCommand ("login")
+			this.AddCommand ("login")
                 .WithDescription ("Allows a user to sign in after a reload")
                 .WithAccessLevel (AccessLevel.PLAYER)
                 .WithHelpText ("yourpassword")
@@ -212,7 +217,7 @@ namespace RestrictPlugin
 		{
 			foreach (var plr in Terraria.Main.player)
 			{
-				if (plr != null && plr.AuthenticatedBy == this.Name)
+				if (plr != null && plr.GetAuthenticatedBy () == this.Name)
 				{
 					//plr.AuthenticatedAs = null;
 					plr.SetAuthentication (null, this.Name);
@@ -250,9 +255,9 @@ namespace RestrictPlugin
 		}
 
 		[Hook (HookOrder.EARLY)]
-		void OnPlayerDataReceived (ref HookContext ctx, ref HookArgs.PlayerDataReceived args)
+		void OnPlayerDataReceived (ref HookContext ctx, ref TDSMHookArgs.PlayerDataReceived args)
 		{
-			if (ctx.Player != null && ctx.Player.AuthenticatedAs != null)
+			if (ctx.Player != null && ctx.Player.GetAuthenticatedAs () != null)
 				return;
 			ctx.SetKick ("Malfunction during login process, try again.");
 
@@ -315,7 +320,7 @@ namespace RestrictPlugin
 		}
 
 		[Hook (HookOrder.EARLY)]
-		void OnPlayerPassReceived (ref HookContext ctx, ref HookArgs.PlayerPassReceived args)
+		void OnPlayerPassReceived (ref HookContext ctx, ref TDSMHookArgs.PlayerPassReceived args)
 		{
 			ctx.SetKick ("Malfunction during login process, try again.");
 
@@ -326,7 +331,7 @@ namespace RestrictPlugin
 				return;
 			}
 
-			var name = player.Name;
+			var name = player.name;
 //			var pname = NameTransform (name);
 			#if LEGACY
             var oname = OldNameTransform(name);
@@ -431,10 +436,10 @@ namespace RestrictPlugin
 		{
 			var player = ctx.Player;
 
-			if (player.Name == null)
+			if (player.name == null)
 				return;
 
-			if (player.AuthenticatedAs == null)
+			if (player.GetAuthenticatedAs () == null)
 				player.Message (255, guestmessage);
 			else if (player.Op)
 				player.Message (255, new Color (128, 128, 255), opmessage);
@@ -456,11 +461,11 @@ namespace RestrictPlugin
 		//		}
 
 		[Hook (HookOrder.EARLY)]
-		void OnSignTextSet (ref HookContext ctx, ref HookArgs.SignTextSet args)
+		void OnSignTextSet (ref HookContext ctx, ref TDSMHookArgs.SignTextSet args)
 		{
 			var player = ctx.Player;
 
-			if (player == null || player.Name == null)
+			if (player == null || player.name == null)
 			{
 				ProgramLog.Log ("<Restrict> Invalid player in OnSignTextSet.");
 				ctx.SetResult (HookResult.IGNORE);
@@ -470,7 +475,7 @@ namespace RestrictPlugin
 			if (!restrictGuests)
 				return;
 
-			if (player.AuthenticatedAs == null)
+			if (player.GetAuthenticatedAs () == null)
 			{
 				ctx.SetResult (HookResult.IGNORE);
 				player.SendTimed ("<Restrict> You are not allowed to edit signs as a guest.");
@@ -484,14 +489,14 @@ namespace RestrictPlugin
 		}
 
 		[Hook (HookOrder.EARLY)]
-		void OnAlter (ref HookContext ctx, ref HookArgs.PlayerWorldAlteration args)
+		void OnAlter (ref HookContext ctx, ref TDSMHookArgs.PlayerWorldAlteration args)
 		{
 			var player = ctx.Player;
 			//TODO
 			//if (player == null && ctx.Sender is Projectile)
 			//    player = (ctx.Sender as Projectile).Creator as Player;
 
-			if (player == null || player.Name == null)
+			if (player == null || player.name == null)
 			{
 				ProgramLog.Error.Log ("<Restrict> Invalid player in OnAlter.");
 				ctx.SetResult (HookResult.IGNORE);
@@ -515,7 +520,7 @@ namespace RestrictPlugin
 			if (IsRestrictedForUser (ctx.Player, WorldAlter))
 			{
 				ctx.SetResult (HookResult.RECTIFY);
-				if (player.AuthenticatedAs == null)
+				if (player.GetAuthenticatedAs () == null)
 				{
 					player.SendTimed ("<Restrict> You are not allowed to alter the world as a guest.");
 					player.SendTimed ("<Restrict> " + message1);
@@ -528,10 +533,10 @@ namespace RestrictPlugin
 		}
 
 		[Hook (HookOrder.EARLY)]
-		void OnSectionAlter (ref HookContext ctx, ref HookArgs.TileSquareReceived args)
+		void OnSectionAlter (ref HookContext ctx, ref TDSMHookArgs.TileSquareReceived args)
 		{
 			var player = ctx.Player;
-			if (player == null || player.Name == null)
+			if (player == null || player.name == null)
 			{
 				ProgramLog.Error.Log ("<Restrict> Invalid player in OnAlter.");
 				ctx.SetResult (HookResult.IGNORE);
@@ -541,7 +546,7 @@ namespace RestrictPlugin
 			if (IsRestrictedForUser (ctx.Player, WorldAlter))
 			{
 				ctx.SetResult (HookResult.RECTIFY);
-				if (player.AuthenticatedAs == null)
+				if (player.GetAuthenticatedAs () == null)
 				{
 					player.SendTimed ("<Restrict> You are not allowed to alter the world as a guest.");
 					player.SendTimed ("<Restrict> " + message1);
@@ -558,7 +563,7 @@ namespace RestrictPlugin
 		{
 			var player = ctx.Player;
 
-			if (player == null || player.Name == null)
+			if (player == null || player.name == null)
 			{
 				ProgramLog.Log ("<Restrict> Invalid player in OnChestBreak.");
 				ctx.SetResult (HookResult.IGNORE);
@@ -568,7 +573,7 @@ namespace RestrictPlugin
 			if (!restrictGuests)
 				return;
 
-			if (player.AuthenticatedAs == null)
+			if (player.GetAuthenticatedAs () == null)
 			{
 				ctx.SetResult (HookResult.RECTIFY);
 				player.SendTimed ("<Restrict> You are not allowed to alter the world as a guest.");
@@ -582,11 +587,11 @@ namespace RestrictPlugin
 		}
 
 		[Hook (HookOrder.EARLY)]
-		void OnChestOpen (ref HookContext ctx, ref HookArgs.ChestOpenReceived args)
+		void OnChestOpen (ref HookContext ctx, ref TDSMHookArgs.ChestOpenReceived args)
 		{
 			var player = ctx.Player;
 
-			if (player == null || player.Name == null)
+			if (player == null || player.name == null)
 			{
 				ProgramLog.Log ("<Restrict> Invalid player in OnChestOpen.");
 				ctx.SetResult (HookResult.IGNORE);
@@ -596,7 +601,7 @@ namespace RestrictPlugin
 			if (!restrictGuests)
 				return;
 
-			if (player.AuthenticatedAs == null)
+			if (player.GetAuthenticatedAs () == null)
 			{
 				ctx.SetResult (HookResult.IGNORE);
 				player.SendTimed ("<Restrict> You are not allowed to open chests as a guest.");
@@ -610,11 +615,11 @@ namespace RestrictPlugin
 		}
 
 		[Hook (HookOrder.LATE)]
-		void OnLiquidFlow (ref HookContext ctx, ref HookArgs.LiquidFlowReceived args)
+		void OnLiquidFlow (ref HookContext ctx, ref TDSMHookArgs.LiquidFlowReceived args)
 		{
 			var player = ctx.Player;
 
-			if (player == null || player.Name == null)
+			if (player == null || player.name == null)
 			{
 				ProgramLog.Log ("<Restrict> Invalid player in OnLiquidFlow.");
 				ctx.SetResult (HookResult.IGNORE);
@@ -624,7 +629,7 @@ namespace RestrictPlugin
 			if (!restrictGuests)
 				return;
 
-			if (player.AuthenticatedAs == null)
+			if (player.GetAuthenticatedAs () == null)
 			{
 				ctx.SetResult (HookResult.RECTIFY);
 				player.SendTimed ("<Restrict> You are not allowed to alter the world as a guest.");
@@ -639,14 +644,14 @@ namespace RestrictPlugin
 
 		[Hook (HookOrder.EARLY)]
 		void
-        OnProjectile (ref HookContext ctx, ref HookArgs.ProjectileReceived args)
+		OnProjectile (ref HookContext ctx, ref TDSMHookArgs.ProjectileReceived args)
 		{
 			var player = ctx.Player;
 			//TODO
 			//if (player == null && ctx.Sender is Projectile)
 			//    player = (ctx.Sender as Projectile).Creator as Player;
 
-			if (player == null || player.Name == null)
+			if (player == null || player.name == null)
 			{
 				ProgramLog.Error.Log ("<Restrict> Invalid player in OnProjectile.");
 				ctx.SetResult (HookResult.IGNORE);
@@ -690,7 +695,7 @@ namespace RestrictPlugin
 					case 440:
 					case 453:
 						ctx.SetResult (HookResult.ERASE);
-						if (player.AuthenticatedAs == null)
+						if (player.GetAuthenticatedAs () == null)
 						{
 							player.SendTimed ("<Restrict> You are not allowed to use this projectile as a guest.");
 							player.SendTimed ("<Restrict> " + message1);
@@ -709,32 +714,32 @@ namespace RestrictPlugin
 			return;
 		}
 
+		//		[Hook (HookOrder.EARLY)]
+		//		void OnDoorStateChanged (ref HookContext ctx, ref HookArgs.DoorStateChanged args)
+		//		{
+		//			if ((!restrictGuests) || (!restrictGuestsDoors))
+		//				return;
+		//
+		//			var player = ctx.Player;
+		//
+		//			if (player == null)
+		//				return;
+		//
+		//			if (player.AuthenticatedAs == null)
+		//			{
+		//				ctx.SetResult (HookResult.RECTIFY);
+		//				player.SendTimed ("<Restrict> You are not allowed to open and close doors as a guest.");
+		//				player.SendTimed ("<Restrict> " + message1);
+		//			}
+		//			else if (IsRestrictedForUser (ctx.Player, DoorChange))
+		//			{
+		//				ctx.SetResult (HookResult.RECTIFY);
+		//				player.SendTimed ("<Restrict> You are not allowed to open and close doors without permissions.");
+		//			}
+		//		}
+
 		[Hook (HookOrder.EARLY)]
-		void OnDoorStateChanged (ref HookContext ctx, ref HookArgs.DoorStateChanged args)
-		{
-			if ((!restrictGuests) || (!restrictGuestsDoors))
-				return;
-
-			var player = ctx.Player;
-
-			if (player == null)
-				return;
-
-			if (player.AuthenticatedAs == null)
-			{
-				ctx.SetResult (HookResult.RECTIFY);
-				player.SendTimed ("<Restrict> You are not allowed to open and close doors as a guest.");
-				player.SendTimed ("<Restrict> " + message1);
-			}
-			else if (IsRestrictedForUser (ctx.Player, DoorChange))
-			{
-				ctx.SetResult (HookResult.RECTIFY);
-				player.SendTimed ("<Restrict> You are not allowed to open and close doors without permissions.");
-			}
-		}
-
-		[Hook (HookOrder.EARLY)]
-		void OnNPCHurt (ref HookContext ctx, ref HookArgs.NpcHurt args)
+		void OnNPCHurt (ref HookContext ctx, ref TDSMHookArgs.NpcHurtReceived args)
 		{
 			if ((!restrictGuests) || (!restrictGuestsNPCs))
 				return;
@@ -744,7 +749,7 @@ namespace RestrictPlugin
 			if (player == null)
 				return;
 
-			if (player.AuthenticatedAs == null)
+			if (player.GetAuthenticatedAs () == null)
 			{
 				ctx.SetResult (HookResult.IGNORE);
 				player.SendTimed ("<Restrict> You are not allowed to hurt NPCs as a guest.");
@@ -791,8 +796,8 @@ namespace RestrictPlugin
                 }
             }
 			#else
-			if (!player.Op && OTA.Data.Storage.IsAvailable)
-				return OTA.Data.Storage.IsPermitted (node, player) != OTA.Data.Permission.Permitted;
+			if (!player.Op && Storage.IsAvailable)
+				return Storage.IsPermitted (node, player) != Permission.Permitted;
 			#endif
 
 			return !player.Op;

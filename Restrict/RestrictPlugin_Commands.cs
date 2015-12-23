@@ -8,6 +8,8 @@ using OTA.Command;
 using Terraria;
 using OTA.Logging;
 using OTA.Data;
+using TDSM.Core;
+using TDSM.Core.Data;
 
 namespace RestrictPlugin
 {
@@ -43,7 +45,7 @@ namespace RestrictPlugin
 					}
 				}
 				else
-					name = player.Name;
+					name = player.name;
 
 //                var pname = NameTransform(name);
 				#if LEGACY
@@ -205,7 +207,7 @@ namespace RestrictPlugin
 				}
 				else
 				{
-					name = player.Name;
+					name = player.name;
 					player.Op = false;
 					//player.AuthenticatedAs = null;
 					player.SetAuthentication (null, this.Name);
@@ -252,12 +254,11 @@ namespace RestrictPlugin
 							changed = true;
 						}
 					}, { "r|restrict-guests=", (bool v) =>
-                        {
-                            rg = v;
-                            changed = true;
-                        }
-                    },
-                    { "d|restrict-guests-doors=", (bool v) =>
+						{
+							rg = v;
+							changed = true;
+						}
+					}, { "d|restrict-guests-doors=", (bool v) =>
                         {
                             rd = v;
                             changed = true;
@@ -403,9 +404,9 @@ namespace RestrictPlugin
 
             var player = (Player)sender;
 
-            if (player.AuthenticatedAs == null)
+			if (player.GetAuthenticatedAs() == null)
             {
-                var name = player.Name;
+                var name = player.name;
 //                var pname = NameTransform(name);
                 #if LEGACY
                 var oname = OldNameTransform(name);
@@ -463,12 +464,12 @@ namespace RestrictPlugin
 
             var player = (Player)sender;
 
-            if (player.AuthenticatedAs != null && command == "reg")
+			if (player.GetAuthenticatedAs() != null && command == "reg")
             {
                 sender.SendMessage("<Restrict> Already registered, use /pass to change your password.", 255, 255, 180, 180);
                 return;
             }
-            else if (player.AuthenticatedAs == null && command == "pass")
+			else if (player.GetAuthenticatedAs() == null && command == "pass")
             {
                 sender.SendMessage("<Restrict> You are a guest, use /reg to submit a registration request.", 255, 255, 180, 180);
                 return;
@@ -494,7 +495,7 @@ namespace RestrictPlugin
                 return;
             }
 
-            var name = player.Name;
+            var name = player.name;
             var lp = password.ToLower();
 
             if (lp == name.ToLower())
@@ -509,7 +510,7 @@ namespace RestrictPlugin
                 return;
             }
 
-            if (player.AuthenticatedAs != null)
+			if (player.GetAuthenticatedAs() != null)
             {
 //                var pname = NameTransform(name);
                 #if LEGACY

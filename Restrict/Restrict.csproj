@@ -57,11 +57,14 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="TerrariaServer">
-      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Open-Terraria-API\Binaries\TerrariaServer.exe</HintPath>
-    </Reference>
     <Reference Include="OTA">
-      <HintPath>..\..\Terraria-s-Dedicated-Server-Mod\Open-Terraria-API\Binaries\OTA.dll</HintPath>
+      <HintPath>..\Terraria-s-Dedicated-Server-Mod\Binaries\OTA.dll</HintPath>
+    </Reference>
+    <Reference Include="TerrariaServer">
+      <HintPath>..\Terraria-s-Dedicated-Server-Mod\Binaries\TerrariaServer.exe</HintPath>
+    </Reference>
+    <Reference Include="TDSM.Core">
+      <HintPath>..\Terraria-s-Dedicated-Server-Mod\Binaries\Plugins\TDSM.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
