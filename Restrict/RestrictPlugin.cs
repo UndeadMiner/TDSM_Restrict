@@ -17,6 +17,8 @@ using TDSM.Core;
 using TDSM.Core.Command;
 using TDSM.Core.Data.Permissions;
 
+[assembly: PluginDependency ("TDSM.Core")]
+
 namespace RestrictPlugin
 {
 	[OTAVersion (1, 0)]
