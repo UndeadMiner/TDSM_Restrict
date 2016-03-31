@@ -718,6 +718,7 @@ namespace RestrictPlugin
                     case 440:
                     case 453:
                         ctx.SetResult(HookResult.ERASE);
+                        if (!player.IsAuthenticated())
                         {
                             player.SendTimed("<Restrict> You are not allowed to use this projectile as a guest.");
                             player.SendTimed("<Restrict> " + message1);
