@@ -280,7 +280,7 @@ namespace RestrictPlugin
         [Hook(HookOrder.EARLY)]
         void OnPlayerDataReceived(ref HookContext ctx, ref TDSMHookArgs.PlayerDataReceived args)
         {
-            if (ctx.Player != null && ctx.Player.GetAuthenticatedAs() != null)
+            if (ctx.Player != null && ctx.Player.IsAuthenticated())
                 return;
             ctx.SetKick("Malfunction during login process, try again.");
 
@@ -462,7 +462,7 @@ namespace RestrictPlugin
             if (player.name == null)
                 return;
 
-            if (player.GetAuthenticatedAs() == null)
+            if (!player.IsAuthenticated())
                 player.Message(255, guestmessage);
             else if (player.IsOp())
                 player.Message(255, new Color(128, 128, 255), opmessage);
@@ -498,7 +498,7 @@ namespace RestrictPlugin
             if (!restrictGuests)
                 return;
 
-            if (player.GetAuthenticatedAs() == null)
+            if (!player.IsAuthenticated())
             {
                 ctx.SetResult(HookResult.IGNORE);
                 player.SendTimed("<Restrict> You are not allowed to edit signs as a guest.");
@@ -543,7 +543,7 @@ namespace RestrictPlugin
             if (IsRestrictedForUser(ctx.Player, WorldAlter))
             {
                 ctx.SetResult(HookResult.RECTIFY);
-                if (player.GetAuthenticatedAs() == null)
+                if (!player.IsAuthenticated())
                 {
                     player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
                     player.SendTimed("<Restrict> " + message1);
@@ -569,7 +569,7 @@ namespace RestrictPlugin
             if (IsRestrictedForUser(ctx.Player, WorldAlter))
             {
                 ctx.SetResult(HookResult.RECTIFY);
-                if (player.GetAuthenticatedAs() == null)
+                if (!player.IsAuthenticated())
                 {
                     player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
                     player.SendTimed("<Restrict> " + message1);
@@ -596,7 +596,7 @@ namespace RestrictPlugin
             if (!restrictGuests)
                 return;
 
-            if (player.GetAuthenticatedAs() == null)
+            if (!player.IsAuthenticated())
             {
                 ctx.SetResult(HookResult.RECTIFY);
                 player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
@@ -624,7 +624,7 @@ namespace RestrictPlugin
             if (!restrictGuests)
                 return;
 
-            if (player.GetAuthenticatedAs() == null)
+            if (!player.IsAuthenticated())
             {
                 ctx.SetResult(HookResult.IGNORE);
                 player.SendTimed("<Restrict> You are not allowed to open chests as a guest.");
@@ -652,7 +652,7 @@ namespace RestrictPlugin
             if (!restrictGuests)
                 return;
 
-            if (player.GetAuthenticatedAs() == null)
+            if (!player.IsAuthenticated())
             {
                 ctx.SetResult(HookResult.RECTIFY);
                 player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
@@ -718,7 +718,6 @@ namespace RestrictPlugin
                     case 440:
                     case 453:
                         ctx.SetResult(HookResult.ERASE);
-                        if (player.GetAuthenticatedAs() == null)
                         {
                             player.SendTimed("<Restrict> You are not allowed to use this projectile as a guest.");
                             player.SendTimed("<Restrict> " + message1);
@@ -772,7 +771,7 @@ namespace RestrictPlugin
             if (player == null)
                 return;
 
-            if (player.GetAuthenticatedAs() == null)
+            if (!player.IsAuthenticated())
             {
                 ctx.SetResult(HookResult.IGNORE);
                 player.SendTimed("<Restrict> You are not allowed to hurt NPCs as a guest.");

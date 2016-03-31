@@ -405,7 +405,7 @@ namespace RestrictPlugin
 
             var player = (Player)sender;
 
-            if (player.GetAuthenticatedAs() == null)
+            if (!player.IsAuthenticated())
             {
                 var name = player.name;
                 //                var pname = NameTransform(name);
@@ -465,12 +465,12 @@ namespace RestrictPlugin
 
             var player = (Player)sender;
 
-            if (player.GetAuthenticatedAs() != null && command == "reg")
+            if (player.IsAuthenticated() && command == "reg")
             {
                 sender.SendMessage("<Restrict> Already registered, use /pass to change your password.", 255, 255, 180, 180);
                 return;
             }
-            else if (player.GetAuthenticatedAs() == null && command == "pass")
+            else if (!player.IsAuthenticated() && command == "pass")
             {
                 sender.SendMessage("<Restrict> You are a guest, use /reg to submit a registration request.", 255, 255, 180, 180);
                 return;
@@ -511,7 +511,7 @@ namespace RestrictPlugin
                 return;
             }
 
-            if (player.GetAuthenticatedAs() != null)
+            if (!player.IsAuthenticated())
             {
                 //                var pname = NameTransform(name);
 #if LEGACY
