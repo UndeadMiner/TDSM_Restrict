@@ -249,7 +249,8 @@ namespace RestrictPlugin
                 var reload = false;
 
                 var options = new OptionSet() {
-                    { "f|force", v => force = true }, { "g|allow-guests=", (bool v) =>
+                    { "f|force", v => force = true },
+                    { "g|allow-guests=", (bool v) =>
                         {
                             ag = v;
                             changed = true;
@@ -511,7 +512,7 @@ namespace RestrictPlugin
                 return;
             }
 
-            if (!player.IsAuthenticated())
+            if (player.IsAuthenticated())
             {
                 //                var pname = NameTransform(name);
 #if LEGACY
