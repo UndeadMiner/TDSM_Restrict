@@ -107,7 +107,8 @@ namespace RestrictPlugin
                     {
                         Password = sp.Length == 1 ? pw : sp[0],
                         Operator = sp.Length == 1 ? false : sp[1] == "op",
-                        Name = username
+                        Name = username,
+                        DateAdded = System.DateTime.UtcNow
                     };
                 }
 

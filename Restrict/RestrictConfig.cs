@@ -1,8 +1,10 @@
-﻿using TDSM.Core.Config;
+﻿//using TDSM.Core.Config;
 
-namespace RestrictPlugin
-{
-    class RestrictConfig : ComponentConfiguration
-    {
-    }
-}
+//namespace RestrictPlugin
+//{
+//    public class RestrictConfig : ComponentConfiguration
+//    {
+//        [ConfigPrefix("verbose")]
+//        public bool Verbose { get; set; }
+//    }
+//}

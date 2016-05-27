@@ -1,25 +1,21 @@
 ﻿//#define LEGACY
 using Microsoft.Xna.Framework;
+using OTA;
+using OTA.Command;
+using OTA.Commands;
+using OTA.Config;
+//using TDSM.Core.ServerCore;
+using OTA.Logging;
+using OTA.Permissions;
+using OTA.Plugin;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using OTA;
-using OTA.Command;
-using OTA.Misc;
-using OTA.Plugin;
-
-//using TDSM.Core.ServerCore;
-using OTA.Logging;
-using OTA.Data;
-using TDSM.Core.Plugin.Hooks;
-using TDSM.Core.Data;
 using TDSM.Core;
 using TDSM.Core.Command;
-using TDSM.Core.Data.Permissions;
-using OTA.Config;
-using OTA.Commands;
+using TDSM.Core.Data;
 using TDSM.Core.Data.Models;
-using OTA.Permissions;
+using TDSM.Core.Plugin.Hooks;
 
 [assembly: PluginDependency("OTA.Commands")]
 [assembly: PluginDependency("TDSM.Core")]
@@ -105,6 +101,8 @@ namespace RestrictPlugin
         public const String ProjectileUse = "restrict.projectileuse";
         public const String SignEdit = "restrict.signedit";
         public const String WorldAlter = "restrict.worldalter";
+        public const String PaintTile = "restrict.painttile";
+        public const String PaintWall = "restrict.paintwall";
 
         public RestrictPlugin()
         {
@@ -277,70 +275,70 @@ namespace RestrictPlugin
             }
         }
 
-        [Hook(HookOrder.EARLY)]
-        void OnPlayerDataReceived(ref HookContext ctx, ref TDSMHookArgs.PlayerDataReceived args)
-        {
-            if (ctx.Player != null && ctx.Player.IsAuthenticated())
-                return;
-            ctx.SetKick("Malfunction during login process, try again.");
+//        [Hook(HookOrder.EARLY)]
+//        public void OnPlayerDataReceived(ref HookContext ctx, ref TDSMHookArgs.PlayerDataReceived args)
+//        {
+//            if (ctx.Player != null && ctx.Player.IsAuthenticated())
+//                return;
+//            ctx.SetKick("Malfunction during login process, try again.");
 
-            if (!args.NameChecked)
-            {
-                string error;
-                if (!args.CheckName(out error))
-                {
-                    ctx.SetKick(error);
-                    return;
-                }
-            }
+//            if (!args.NameChecked)
+//            {
+//                string error;
+//                if (!args.CheckName(out error))
+//                {
+//                    ctx.SetKick(error);
+//                    return;
+//                }
+//            }
 
-            var player = ctx.Player;
-            if (player == null)
-            {
-                ProgramLog.Error.Log("Null player passed to Restrict.OnPlayerDataReceived.");
-                return;
-            }
+//            var player = ctx.Player;
+//            if (player == null)
+//            {
+//                ProgramLog.Error.Log("Null player passed to Restrict.OnPlayerDataReceived.");
+//                return;
+//            }
 
-            var name = args.Name;
-            //			var pname = NameTransform (name);
-#if LEGACY
-            var oname = OldNameTransform(name);
-#endif
-            DbPlayer entry = null;
+//            var name = args.Name;
+//            //			var pname = NameTransform (name);
+//#if LEGACY
+//            var oname = OldNameTransform(name);
+//#endif
+//            DbPlayer entry = null;
 
-            lock (users)
-            {
-#if LEGACY
-                entry = users.Find(pname) ?? users.Find(oname);
-#else
-                entry = users.Find(name);
-#endif
-            }
+//            lock (users)
+//            {
+//#if LEGACY
+//                entry = users.Find(pname) ?? users.Find(oname);
+//#else
+//                entry = users.Find(name);
+//#endif
+//            }
 
-            if (entry == null)
-            {
-                if (allowGuests)
-                {
-                    ctx.SetResult(HookResult.DEFAULT);
-                    //player.AuthenticatedAs = null;
-                    player.SetAuthentication(null, this.Name);
-#if TDSM_QUEUE
-                    (ctx.Connection as ClientConnection).DesiredQueue = 0; //(int)LoginPriority.QUEUE_LOW_PRIO;
-#endif
-                    ProgramLog.Log("<Restrict> Letting user {0} from {1} in as guest.", name, player.IPAddress);
-                }
-                else
-                {
-                    ProgramLog.Log("<Restrict> Unregistered user {0} from {1} attempted to connect.", name, player.IPAddress);
-                    ctx.SetKick("Only registered users are allowed.");
-                    return;
-                }
-                return;
-            }
+//            if (entry == null)
+//            {
+//                if (allowGuests)
+//                {
+//                    ctx.SetResult(HookResult.DEFAULT);
+//                    //player.AuthenticatedAs = null;
+//                    player.SetAuthentication(null, this.Name);
+//#if TDSM_QUEUE
+//                    (ctx.Connection as ClientConnection).DesiredQueue = 0; //(int)LoginPriority.QUEUE_LOW_PRIO;
+//#endif
+//                    ProgramLog.Log("<Restrict> Letting user {0} from {1} in as guest.", name, player.IPAddress);
+//                }
+//                else
+//                {
+//                    ProgramLog.Log("<Restrict> Unregistered user {0} from {1} attempted to connect.", name, player.IPAddress);
+//                    ctx.SetKick("Only registered users are allowed.");
+//                    return;
+//                }
+//                return;
+//            }
 
-            ProgramLog.Log("<Restrict> Expecting password for user {0} from {1}.", name, player.IPAddress);
-            ctx.SetResult(HookResult.ASK_PASS);
-        }
+//            ProgramLog.Log("<Restrict> Expecting password for user {0} from {1}.", name, player.IPAddress);
+//            ctx.SetResult(HookResult.ASK_PASS);
+//        }
 
         [Hook(HookOrder.EARLY)]
         void OnPlayerPassReceived(ref HookContext ctx, ref TDSMHookArgs.PlayerPassReceived args)
@@ -666,8 +664,7 @@ namespace RestrictPlugin
         }
 
         [Hook(HookOrder.EARLY)]
-        void
-        OnProjectile(ref HookContext ctx, ref TDSMHookArgs.ProjectileReceived args)
+        void OnProjectile(ref HookContext ctx, ref TDSMHookArgs.ProjectileReceived args)
         {
             var player = ctx.Player;
             //TODO
@@ -782,6 +779,58 @@ namespace RestrictPlugin
             {
                 ctx.SetResult(HookResult.IGNORE);
                 player.SendTimed("<Restrict> You are not allowed to hurt NPCs without permissions.");
+            }
+        }
+
+        [Hook(HookOrder.EARLY)]
+        void OnTilePainted(ref HookContext ctx, ref TDSMHookArgs.PaintTile args)
+        {
+            var player = ctx.Player;
+            if (player == null || player.name == null)
+            {
+                ProgramLog.Error.Log("<Restrict> Invalid player in OnTilePainted.");
+                ctx.SetResult(HookResult.IGNORE);
+                return;
+            }
+
+            if (IsRestrictedForUser(ctx.Player, PaintTile))
+            {
+                ctx.SetResult(HookResult.RECTIFY);
+                if (!player.IsAuthenticated())
+                {
+                    player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
+                    player.SendTimed("<Restrict> " + message1);
+                }
+                else
+                {
+                    player.SendTimed("<Restrict> You are not allowed to alter the world without permissions.");
+                }
+            }
+        }
+
+        [Hook(HookOrder.EARLY)]
+        void OnWallPainted(ref HookContext ctx, ref TDSMHookArgs.PaintWall args)
+        {
+            var player = ctx.Player;
+            if (player == null || player.name == null)
+            {
+                ProgramLog.Error.Log("<Restrict> Invalid player in OnWallPainted.");
+                ctx.SetResult(HookResult.IGNORE);
+                return;
+            }
+
+            if (IsRestrictedForUser(ctx.Player, PaintWall))
+            {
+                ctx.SetResult(HookResult.RECTIFY);
+                if (!player.IsAuthenticated())
+                {
+                    player.SendTimed("<Restrict> You are not allowed to alter the world as a guest.");
+                    player.SendTimed("<Restrict> " + message1);
+                }
+                else
+                {
+                    player.SendTimed("<Restrict> You are not allowed to alter the world without permissions.");
+                }
             }
         }
 
